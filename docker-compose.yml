@@ -1,0 +1,24 @@
+services:
+  humaneval:
+    build: .                # build from local Dockerfile
+    container_name: humaneval_sandbox
+    stdin_open: true
+    tty: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - none
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 1.0
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+      - ./ollama_models:/root/.ollama
+
+networks:
+  none:
+    driver: bridge
+    # internal: true   # enable this later if you want *zero internet* inside the sandbox
