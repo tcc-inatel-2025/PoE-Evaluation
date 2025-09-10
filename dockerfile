@@ -13,13 +13,7 @@ COPY ./human-eval /workspace/human-eval
 
 # Install Python package in editable mode
 RUN pip install --no-cache-dir -e /workspace/human-eval
-
-# Copy startup script
-COPY start.sh /workspace/start.sh
-RUN chmod +x /workspace/start.sh
+RUN pip install requests
 
 # Optional: expose a folder for any shared data (not strictly needed)
 VOLUME /workspace/models
-
-# Start container
-CMD ["/workspace/start.sh"]
