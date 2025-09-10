@@ -8,12 +8,12 @@ RUN apt-get update && \
 # Set working directory
 WORKDIR /workspace
 
-# Copy your project
-COPY ./human-eval /workspace/human-eval
+# Clone the HumanEval repository
+RUN git clone https://github.com/openai/human-eval.git /workspace/human-eval
 
 # Install Python package in editable mode
 RUN pip install --no-cache-dir -e /workspace/human-eval
-RUN pip install requests
+RUN pip install --no-cache-dir requests
 
-# Optional: expose a folder for any shared data (not strictly needed)
-VOLUME /workspace/models
+# Set default command
+CMD ["bash"]

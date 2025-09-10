@@ -21,7 +21,8 @@ services:
               capabilities: [gpu]
 
   humaneval:
-    build: .
+    build: 
+      context: . 
     container_name: humaneval_sandbox
     stdin_open: true
     tty: true
