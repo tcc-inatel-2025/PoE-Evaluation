@@ -1,6 +1,27 @@
 services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_models:/root/.ollama
+    networks:
+      - appnet
+    deploy:
+      resources:
+        limits:
+          memory: 16G   # <-- increase as needed
+        reservations:
+          memory: 8G
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
   humaneval:
-    build: .                # build from local Dockerfile
+    build: .
     container_name: humaneval_sandbox
     stdin_open: true
     tty: true
@@ -8,17 +29,21 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    networks:
-      - none
     pids_limit: 64
     mem_limit: 256m
     cpus: 1.0
     working_dir: /workspace
     volumes:
       - ./:/workspace
-      - ./ollama_models:/root/.ollama
+      - ./ollama_models:/root/.ollama    # same shared folder as ollama
+    networks:
+      - appnet             # same network as ollama
+    depends_on:
+      - ollama
+
+volumes:
+  ollama_data:
 
 networks:
-  none:
+  appnet:
     driver: bridge
-    # internal: true   # enable this later if you want *zero internet* inside the sandbox

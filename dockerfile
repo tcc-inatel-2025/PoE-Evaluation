@@ -11,23 +11,15 @@ WORKDIR /workspace
 # Copy your project
 COPY ./human-eval /workspace/human-eval
 
-# Install Python package
+# Install Python package in editable mode
 RUN pip install --no-cache-dir -e /workspace/human-eval
-
-RUN curl -fsSL https://ollama.com/install.sh | sh
-
-# Verify installation
-RUN ollama --version
-
-# Optional: expose a folder for Ollama models
-VOLUME /workspace/models
 
 # Copy startup script
 COPY start.sh /workspace/start.sh
 RUN chmod +x /workspace/start.sh
 
-# Expose Ollama default port
-EXPOSE 11434
+# Optional: expose a folder for any shared data (not strictly needed)
+VOLUME /workspace/models
 
 # Start container
 CMD ["/workspace/start.sh"]
