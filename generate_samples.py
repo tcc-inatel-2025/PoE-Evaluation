@@ -1,12 +1,39 @@
 import os
 import json
 import requests
+import argparse
 from human_eval.data import read_problems  # already in your humaneval project
 
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
-MODEL_NAME = os.getenv("OLLAMA_MODEL", "llama3.1")
-NUM_SAMPLES_PER_TASK = int(os.getenv("NUM_SAMPLES", "1"))  # how many per problem
-OUTPUT_FILE = os.getenv("OUTPUT_FILE", "samples.jsonl")
+# --- CLI + ENV VARS ---
+parser = argparse.ArgumentParser(description="Generate HumanEval samples from an Ollama model.")
+parser.add_argument(
+    "--url",
+    default=os.getenv("OLLAMA_URL", "http://ollama:11434"),
+    help="Ollama server URL (default from OLLAMA_URL env var)."
+)
+parser.add_argument(
+    "--model",
+    default=os.getenv("OLLAMA_MODEL", "llama3.1"),
+    help="Model name (default from OLLAMA_MODEL env var)."
+)
+parser.add_argument(
+    "--num-samples",
+    type=int,
+    default=int(os.getenv("NUM_SAMPLES", "1")),
+    help="Number of samples per task (default from NUM_SAMPLES env var)."
+)
+parser.add_argument(
+    "--output",
+    default=os.getenv("OUTPUT_FILE", "samples.jsonl"),
+    help="Output file (default from OUTPUT_FILE env var)."
+)
+
+args = parser.parse_args()
+
+OLLAMA_URL = args.url
+MODEL_NAME = args.model
+NUM_SAMPLES_PER_TASK = args.num_samples
+OUTPUT_FILE = args.output
 
 
 def generate_from_ollama(model, prompt):
@@ -18,8 +45,6 @@ def generate_from_ollama(model, prompt):
         json={"model": model, "prompt": prompt},
         stream=True,
     )
-    # Ollama streams JSON objects per line:
-    # {"response":"text","done":false} ... {"done":true}
     output = ""
     for line in resp.iter_lines():
         if not line:
@@ -30,6 +55,7 @@ def generate_from_ollama(model, prompt):
         if data.get("done"):
             break
     return output
+
 
 def main():
     problems = read_problems()  # dict: {task_id: {"prompt": "...", ...}}
@@ -46,6 +72,7 @@ def main():
                 f_out.write(json.dumps(record) + "\n")
                 f_out.flush()
     print(f"✅ Done. Samples saved to {OUTPUT_FILE}")
+
 
 if __name__ == "__main__":
     main()
