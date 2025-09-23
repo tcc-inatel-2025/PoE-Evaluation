@@ -61,7 +61,7 @@ def main():
     problems = read_problems()  # dict: {task_id: {"prompt": "...", ...}}
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f_out:
         for task_id, problem in problems.items():
-            prompt = problem["prompt"] + "\n\n# Only write the Python function, no explanations, no markdown, no print statements."
+            prompt = problem["prompt"] + "\n\n# Only write the Python function, no explanations, no markdown, no print statements, no reasoning."
             for _ in range(NUM_SAMPLES_PER_TASK):
                 print(f"[+] Generating for task {task_id} ...")
                 completion = generate_from_ollama(MODEL_NAME, prompt)
