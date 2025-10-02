@@ -15,7 +15,7 @@ RUN git clone https://github.com/openai/human-eval.git /workspace/human-eval
 RUN pip install --no-cache-dir -e /workspace/human-eval
 RUN pip install --no-cache-dir requests
 RUN pip install radon
-RUN Pip install pylint
+RUN pip install pylint
 
 # Set default command
 CMD ["bash"]
