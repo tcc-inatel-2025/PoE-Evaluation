@@ -11,7 +11,8 @@ from radon.complexity import cc_visit
 from tqdm import tqdm
 from pylint.lint import Run
 
-MAX_CC = 10  # set your scale limit
+MAX_CC = 10 
+MAX_LINT_SCORE = 10  
 
 def discover_sample_files(samples_dir="samples"):
     """
@@ -39,26 +40,27 @@ def discover_sample_files(samples_dir="samples"):
     
     return file_model_pairs
 
+# ------------------------------
+# Funções auxiliares - Cyclomatic complexity
+# ------------------------------
+
 def scale_cc(value, max_cc=10):
     """
-    Scales cyclomatic complexity to 0-1, then inverts it so that
-    higher scores are better (simpler code).
-    
-    - CC = 0       -> 1.0 (best)
-    - CC >= max_cc -> 0.0 (worst)
+    Normaliza complexidade ciclomática para [0,1].
+    Quanto menor a complexidade, melhor o score.
     """
     if value is None:
         return None
     raw_scaled = min(value / max_cc, 1.0)
     return 1.0 - raw_scaled
 
+
 def evaluate_cyclomatic_complexity(results_file):
     """
-    Reads the HumanEval results JSONL file, computes cyclomatic complexity for
-    each sample, scales it to 0-1, and overwrites the file.
+    Calcula complexidade ciclomática média e máxima de cada solução.
+    Adiciona os valores normalizados no JSON de resultados.
     """
     results = []
-
     with open(results_file, "r") as f:
         for line in tqdm(f, desc="Evaluating cyclomatic complexity"):
             sample = json.loads(line)
@@ -79,7 +81,6 @@ def evaluate_cyclomatic_complexity(results_file):
             sample["max_cyclomatic_complexity"] = scale_cc(max_cc_value)
             results.append(sample)
 
-    # Overwrite the original file
     with open(results_file, "w") as f:
         for sample in results:
             f.write(json.dumps(sample) + "\n")
@@ -87,30 +88,33 @@ def evaluate_cyclomatic_complexity(results_file):
     print(f"Cyclomatic complexity added (scaled 0-1). Results overwritten in {results_file}")
     return results_file
 
-MAX_LINT_SCORE = 10  # pylint score max is 10
+# ------------------------------
+# Funções auxiliares - Estilo/Linting
+# ------------------------------
 
 def scale_lint(value, max_score=MAX_LINT_SCORE):
-    """Scale pylint score 0-1 (higher is better)"""
+    """Normaliza nota do pylint para [0,1]"""
     if value is None:
         return None
     return min(value / max_score, 1.0)
 
+
 def run_pylint_string(code_str):
-    """Run pylint on a code string and return score (0-10)"""
+    """Executa pylint em uma string de código e retorna nota (0-10)"""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=True) as tmp:
         tmp.write(code_str)
         tmp.flush()
         results = Run([tmp.name], do_exit=False)
-        score = results.linter.stats.global_note  # pylint score out of 10
+        score = results.linter.stats.global_note
     return score
+
 
 def evaluate_linter(results_file):
     """
-    Reads a HumanEval results JSONL file, runs pylint on each 'completion',
-    adds a scaled style_score (0-1), and overwrites the same file.
+    Executa pylint em cada solução gerada.
+    Adiciona a nota normalizada (style_score) ao JSON de resultados.
     """
     results = []
-
     with open(results_file, "r") as f:
         for line in tqdm(f, desc="Evaluating linter/style"):
             sample = json.loads(line)
@@ -124,13 +128,64 @@ def evaluate_linter(results_file):
             sample["style_score"] = scale_lint(raw_score)
             results.append(sample)
 
-    # Overwrite the original file
     with open(results_file, "w") as f:
         for sample in results:
             f.write(json.dumps(sample) + "\n")
 
     print(f"Linter/style evaluation done. Results overwritten in {results_file}")
     return results_file
+
+# ------------------------------
+# Funções auxiliares - Contagem de linhas
+# ------------------------------
+
+def scale_line_count(count, max_lines=50):
+    """
+    Normaliza número de linhas para [0,1].
+    <= 10 linhas → 1.0 (ótimo)
+    >= max_lines → 0.0 (ruim)
+    """
+    if count is None:
+        return None
+    if count <= 10:
+        return 1.0
+    if count >= max_lines:
+        return 0.0
+    return 1.0 - ((count - 10) / (max_lines - 10))
+
+
+def evaluate_line_count(results_file):
+    """
+    Conta número de linhas de cada solução (exclui vazias e comentários).
+    Adiciona score normalizado ao JSON de resultados.
+    """
+    results = []
+    with open(results_file, "r") as f:
+        for line in tqdm(f, desc="Evaluating line count"):
+            sample = json.loads(line)
+            code = sample.get("completion", "")
+            try:
+                lines = [
+                    l for l in code.split("\n") 
+                    if l.strip() != "" and not l.strip().startswith("#")
+                ]
+                raw_count = len(lines)
+            except Exception:
+                raw_count = None
+
+            sample["line_count_score"] = scale_line_count(raw_count)
+            results.append(sample)
+
+    with open(results_file, "w") as f:
+        for sample in results:
+            f.write(json.dumps(sample) + "\n")
+
+    print(f"Line count evaluation done. Results overwritten in {results_file}")
+    return results_file
+
+# ------------------------------
+# Pipeline principal
+# ------------------------------
 
 def entry_point(
     k: str = "1,10,100",
@@ -172,17 +227,15 @@ def entry_point(
         )
         
         # The evaluate_functional_correctness creates a *_results.jsonl file
-        # We need to move and rename it to our results directory
         temp_results_file = f"{sample_file}_results.jsonl"
         final_results_file = os.path.join(results_dir, f"{model_name}_results.jsonl")
         
-        # Move the temporary results file to our results directory with proper naming
         if os.path.exists(temp_results_file):
             os.rename(temp_results_file, final_results_file)
         
-        # Add cyclomatic complexity and style metrics
         final_results_file = evaluate_cyclomatic_complexity(final_results_file)
         final_results_file = evaluate_linter(final_results_file)
+        final_results_file = evaluate_line_count(final_results_file)
         
         all_results[model_name] = {
             "pass_at_k": pass_at_k,
@@ -200,6 +253,10 @@ def entry_point(
         print(f"    Pass@k: {results['pass_at_k']}")
     
     return all_results
+
+# ------------------------------
+# Entry point CLI
+# ------------------------------
 
 def main():
     fire.Fire(entry_point)
