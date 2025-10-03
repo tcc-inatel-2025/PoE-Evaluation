@@ -11,11 +11,9 @@ WORKDIR /workspace
 # Clone the HumanEval repository
 RUN git clone https://github.com/openai/human-eval.git /workspace/human-eval
 
-# Install Python package in editable mode
-RUN pip install --no-cache-dir -e /workspace/human-eval
-RUN pip install --no-cache-dir requests
-RUN pip install radon
-RUN Pip install pylint
+# Install Python packages
+RUN pip install --no-cache-dir -e /workspace/human-eval && \
+    pip install --no-cache-dir requests radon pylint
 
 # Set default command
 CMD ["bash"]
