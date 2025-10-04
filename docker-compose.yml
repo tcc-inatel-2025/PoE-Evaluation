@@ -12,13 +12,13 @@ services:
     deploy:
       resources:
         limits:
-          memory: 16G   # <-- increase as needed
+          memory: 8G  # <-- increase as needed
         reservations:
-          memory: 8G
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+          memory: 4G
+          #devices:
+          #  - driver: nvidia
+          #    count: all
+          #    capabilities: [gpu]
 
   humaneval:
     build: 
