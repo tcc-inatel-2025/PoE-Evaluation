@@ -9,9 +9,18 @@ from radon.complexity import cc_visit
 from tqdm import tqdm
 from pylint.lint import Run
 
-MAX_CC = 10  # set your scale limit
+# ==============================
+# CONFIG
+# ==============================
+MAX_CC = 10          # limite para escalar complexidade
+MAX_LINT_SCORE = 10  # pylint score max 
+MAX_EXEC_TIME = 1.0  # 1 segundo = tempo "ruim" (pior eficiência)
+LOC_REF = 50.0       # referência de linhas de código para escala LOC
 
-def scale_cc(value, max_cc=10):
+# ==============================
+# ESCALAS DE MÉTRICAS
+# ==============================
+def scale_cc(value, max_cc=MAX_CC):
     """
     Scales cyclomatic complexity to 0-1, then inverts it so that
     higher scores are better (simpler code).
@@ -24,6 +33,34 @@ def scale_cc(value, max_cc=10):
     raw_scaled = min(value / max_cc, 1.0)
     return 1.0 - raw_scaled
 
+
+def scale_lint(value, max_score=MAX_LINT_SCORE):
+    """Escala pylint score 0-1 (maior = melhor)"""
+    if value is None:
+        return None
+    return min(value / max_score, 1.0)
+
+
+def scale_efficiency(value, max_time=MAX_EXEC_TIME):
+    """
+    Escala tempo de execução (s) para [0,1].
+    Menor tempo = melhor.
+    """
+    if value is None:
+        return None
+    raw_scaled = min(value / max_time, 1.0)
+    return 1.0 - raw_scaled
+
+
+def scale_loc(loc, ref=LOC_REF):
+    """
+    Escala número de linhas (menos = melhor).
+    """
+    return max(0.0, 1.0 - min(loc / ref, 1.0))
+
+# ==============================
+# MÉTRICAS INDIVIDUAIS
+# ==============================
 def evaluate_cyclomatic_complexity(results_file):
     """
     Reads the HumanEval results JSONL file, computes cyclomatic complexity for
@@ -59,13 +96,6 @@ def evaluate_cyclomatic_complexity(results_file):
     print(f"Cyclomatic complexity added (scaled 0-1). Results overwritten in {results_file}")
     return results_file
 
-MAX_LINT_SCORE = 10  # pylint score max is 10
-
-def scale_lint(value, max_score=MAX_LINT_SCORE):
-    """Scale pylint score 0-1 (higher is better)"""
-    if value is None:
-        return None
-    return min(value / max_score, 1.0)
 
 def run_pylint_string(code_str):
     """Run pylint on a code string and return score (0-10)"""
@@ -75,6 +105,7 @@ def run_pylint_string(code_str):
         results = Run([tmp.name], do_exit=False)
         score = results.linter.stats.global_note  # pylint score out of 10
     return score
+
 
 def evaluate_linter(results_file):
     """
@@ -104,6 +135,90 @@ def evaluate_linter(results_file):
     print(f"Linter/style evaluation done. Results overwritten in {results_file}")
     return results_file
 
+def evaluate_efficiency(results_file, max_time=MAX_EXEC_TIME):
+    """
+    Mede eficiência (tempo de execução) para cada código.
+    """
+    results = []
+
+    with open(results_file, "r") as f:
+        for line in tqdm(f, desc="Evaluating efficiency"):
+            sample = json.loads(line)
+            code = sample.get("completion", "")
+            exec_time = None
+
+            try:
+                local_env = {}
+                exec(code, {}, local_env)
+                funcs = [v for v in local_env.values() if callable(v)]
+                if funcs:
+                    func = funcs[0]
+                    start = time.time()
+                    for _ in range(3):
+                        try:
+                            func()  # executa sem argumentos
+                        except Exception:
+                            pass
+                    exec_time = (time.time() - start) / 3
+            except Exception:
+                exec_time = None
+
+            sample["efficiency_score"] = scale_efficiency(exec_time, max_time)
+            results.append(sample)
+
+    with open(results_file, "w") as f:
+        for sample in results:
+            f.write(json.dumps(sample) + "\n")
+
+    print(f"Execution efficiency added (scaled 0–1). Results overwritten in {results_file}")
+    return results_file
+
+
+def compute_overall_score(results_file):
+    """
+    Combina todas as métricas em um único score PoE.
+    """
+    weights = {
+        "functional_correctness": 0.4,
+        "avg_cyclomatic_complexity": 0.2,
+        "style_score": 0.2,
+        "efficiency_score": 0.1,
+        "loc_score": 0.1,
+    }
+
+    results = []
+
+    with open(results_file, "r") as f:
+        for line in tqdm(f, desc="Computing overall PoE score"):
+            sample = json.loads(line)
+            code = sample.get("completion", "")
+
+            # LOC
+            loc = len([l for l in code.splitlines() if l.strip()])
+            loc_score = scale_loc(loc)
+            sample["loc_score"] = loc_score
+
+            # Functional correctness (usa 'passed' ou 0/1)
+            func_correct = sample.get("passed", 0)
+            sample["functional_correctness"] = float(func_correct)
+
+            total = 0.0
+            for k, w in weights.items():
+                val = sample.get(k, 0) or 0
+                total += val * w
+            sample["overall_score"] = total
+            results.append(sample)
+
+    with open(results_file, "w") as f:
+        for sample in results:
+            f.write(json.dumps(sample) + "\n")
+
+    print(f"Overall PoE score computed and added. Results overwritten in {results_file}")
+    return results_file
+
+# ==============================
+# ENTRY POINT
+# ==============================
 def entry_point(
     k: str = "1,10,100",
     n_workers: int = 4,
@@ -112,27 +227,38 @@ def entry_point(
     sample_file: str = "samples.jsonl"
 ):
     """
-    Evaluates functional correctness of generated samples (samples.jsonl),
-    adds cyclomatic complexity metrics, and writes enhanced results.
+    Avalia corretude funcional, complexidade ciclomática, estilo, eficiência
+    e combina tudo em um score unificado (PoE).
     """
     k_list = list(map(int, k.split(",")))
 
-    # Functional correctness
+    print("=== Evaluating functional correctness ===")
     pass_at_k = evaluate_functional_correctness(
         sample_file, k_list, n_workers, timeout, problem_file
     )
 
-    # Cyclomatic complexity
     results_file = f"{sample_file}_results.jsonl"
-    results_file = evaluate_cyclomatic_complexity(results_file)
-    results_file = evaluate_linter(results_file)
-    # Linter
 
+    print("=== Evaluating cyclomatic complexity ===")
+    results_file = evaluate_cyclomatic_complexity(results_file)
+
+    print("=== Evaluating linter/style ===")
+    results_file = evaluate_linter(results_file)
+
+    print("=== Evaluating efficiency ===")
+    results_file = evaluate_efficiency(results_file)
+
+    print("=== Computing overall score (PoE) ===")
+    results_file = compute_overall_score(results_file)
+
+    print("\nEvaluation complete!")
     print(f"Pass@k metrics: {pass_at_k}")
     print(f"Enhanced results file: {results_file}")
 
+
 def main():
     fire.Fire(entry_point)
+
 
 if __name__ == "__main__":
     sys.exit(main())
