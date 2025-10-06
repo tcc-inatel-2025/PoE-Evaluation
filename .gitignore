@@ -2,9 +2,6 @@
 ollama_models
 human-eval
 
-# Data files
-results/
-results/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
