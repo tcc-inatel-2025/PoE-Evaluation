@@ -25,8 +25,8 @@ parser.add_argument(
 )
 parser.add_argument(
     "--output",
-    default=os.getenv("OUTPUT_FILE", "data/samples.jsonl"),
-    help="Output file (default from OUTPUT_FILE env var)."
+    default=None,  # Will be set dynamically based on model name
+    help="Output file (default: data/{model_name}_samples.jsonl)."
 )
 
 args = parser.parse_args()
@@ -34,7 +34,18 @@ args = parser.parse_args()
 OLLAMA_URL = args.url
 MODEL_NAME = args.model
 NUM_SAMPLES_PER_TASK = args.num_samples
-OUTPUT_FILE = args.output
+
+# Create samples directory
+SAMPLES_DIR = "samples"
+os.makedirs(SAMPLES_DIR, exist_ok=True)
+
+# Set output file based on model name if not provided
+if args.output is None:
+    # Sanitize model name for filename (replace invalid characters)
+    safe_model_name = MODEL_NAME.replace("/", "_").replace(":", "_")
+    OUTPUT_FILE = os.path.join(SAMPLES_DIR, f"{safe_model_name}_samples.jsonl")
+else:
+    OUTPUT_FILE = args.output
 
 PROMPT_TEMPLATE = """
 from typing import List, Tuple, Optional, Any
@@ -78,6 +89,9 @@ def generate_from_ollama(model, prompt):
 
 
 def main():
+    print(f"Generating samples using model: {MODEL_NAME}")
+    print(f"Results will be saved to: {OUTPUT_FILE}")
+    
     problems = read_problems()  # dict: {task_id: {"prompt": "...", ...}}
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f_out:
         for task_id, problem in problems.items():

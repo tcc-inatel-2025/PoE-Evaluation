@@ -5,6 +5,8 @@ import sys
 import json
 import gzip
 import tempfile
+import os
+import glob
 from human_eval.data import HUMAN_EVAL
 from human_eval.evaluation import evaluate_functional_correctness
 from radon.complexity import cc_visit
@@ -20,6 +22,33 @@ MAX_CC = 10          # limite para escalar complexidade
 MAX_LINT_SCORE = 10  # pylint score max 
 MAX_EXEC_TIME = 1.0  # 1 segundo = tempo "ruim" (pior eficiência)
 LOC_REF = 50.0       # referência de linhas de código para escala LOC
+
+
+def discover_sample_files(samples_dir="samples"):
+    """
+    Discover all .jsonl files in the samples directory and extract model names.
+    Returns a list of tuples: (file_path, model_name)
+    """
+    if not os.path.exists(samples_dir):
+        print(f"Samples directory '{samples_dir}' does not exist.")
+        return []
+    
+    pattern = os.path.join(samples_dir, "*.jsonl")
+    sample_files = glob.glob(pattern)
+    
+    file_model_pairs = []
+    for file_path in sample_files:
+        # Extract model name from filename (assumes format: {model_name}_samples.jsonl)
+        filename = os.path.basename(file_path)
+        if filename.endswith("_samples.jsonl"):
+            model_name = filename[:-len("_samples.jsonl")]
+            file_model_pairs.append((file_path, model_name))
+        else:
+            # Fallback: use filename without extension as model name
+            model_name = os.path.splitext(filename)[0]
+            file_model_pairs.append((file_path, model_name))
+    
+    return file_model_pairs
 
 # ==============================
 # ESCALAS DE MÉTRICAS
@@ -211,7 +240,7 @@ def compute_overall_score(results_file, output_file=None):
             results.append(sample)
 
     if output_file is None:
-        output_file = results_file.replace("results/_results.jsonl", "results/results.jsonl")
+        output_file = results_file.replace("results/_results.jsonl", "results/_results.jsonl")
 
     # Salvar JSONL 
     with open(output_file, "w") as f:
@@ -219,9 +248,6 @@ def compute_overall_score(results_file, output_file=None):
             f.write(json.dumps(sample) + "\n")
 
     poe_mean = overall_sum / count if count > 0 else 0.0
-    print(f"\n=== FINAL SCORE ===")
-    print(f"Average PoE score (mean): {poe_mean:.4f}")
-    print(f"Results saved to: {output_file}")
 
     # Export CSV
     df = pd.DataFrame(results)
@@ -246,33 +272,68 @@ def entry_point(
     n_workers: int = 4,
     timeout: float = 3.0,
     problem_file: str = HUMAN_EVAL,
-    sample_file: str = "data/samples.jsonl"
+    samples_dir: str = "samples"
 ):
     k_list = list(map(int, k.split(",")))
+    
+    # Create results directory
+    results_dir = "results"
+    os.makedirs(results_dir, exist_ok=True)
 
-    print("=== Evaluating functional correctness ===")
-    pass_at_k = evaluate_functional_correctness(
-        sample_file, k_list, n_workers, timeout, problem_file
-    )
-
-    results_file = f"{sample_file}_results.jsonl"
-
-    print("=== Evaluating cyclomatic complexity ===")
-    results_file = evaluate_cyclomatic_complexity(results_file)
-
-    print("=== Evaluating linter/style ===")
-    results_file = evaluate_linter(results_file)
-
-    print("=== Evaluating efficiency ===")
-    results_file = evaluate_efficiency(results_file)
-
-    print("=== Computing overall score (PoE) ===")
-    final_file, poe_mean = compute_overall_score(results_file)
-
-    print("\nEvaluation complete!")
-    print(f"Pass@k metrics: {pass_at_k}")
-    print(f"Average overall PoE score: {poe_mean:.4f}")
-    print(f"Enhanced results file: {final_file}")
+    # Discover all sample files
+    file_model_pairs = discover_sample_files(samples_dir)
+    
+    if not file_model_pairs:
+        print(f"No sample files found in '{samples_dir}' directory.")
+        return
+    
+    print(f"Found {len(file_model_pairs)} sample file(s) to evaluate:")
+    for file_path, model_name in file_model_pairs:
+        print(f"  - {file_path} (model: {model_name})")
+    print()
+    
+    all_results = {}
+    
+    for sample_file, model_name in file_model_pairs:
+        print(f"🔍 Evaluating {model_name}...")
+        
+        # Functional correctness
+        pass_at_k = evaluate_functional_correctness(
+            sample_file, k_list, n_workers, timeout, problem_file
+        )
+        
+        # The evaluate_functional_correctness creates a *_results.jsonl file
+        # We need to move and rename it to our results directory
+        temp_results_file = f"{sample_file}_results.jsonl"
+        final_results_file = os.path.join(results_dir, f"{model_name}_results.jsonl")
+        
+        # Move the temporary results file to our results directory with proper naming
+        if os.path.exists(temp_results_file):
+            os.rename(temp_results_file, final_results_file)
+        
+        # Add cyclomatic complexity and style metrics
+        final_results_file = evaluate_cyclomatic_complexity(final_results_file)
+        final_results_file = evaluate_linter(final_results_file)
+        final_results_file = evaluate_efficiency(final_results_file)
+        final_results_file, poe_mean = compute_overall_score(final_results_file)
+        print(f"Average overall PoE score: {poe_mean:.3f}")
+        
+        all_results[model_name] = {
+            "pass_at_k": pass_at_k,
+            "results_file": final_results_file
+        }
+        
+        print(f"✅ {model_name} evaluation complete: {final_results_file}")
+        print(f"   Pass@k metrics: {pass_at_k}")
+        print()
+    
+    print("🎉 All evaluations complete!")
+    print(f"Results saved in '{results_dir}' directory:")
+    for model_name, results in all_results.items():
+        print(f"  - {results['results_file']}")
+        print(f"    Pass@k: {results['pass_at_k']}")
+    
+    return all_results
 
 
 def main():
