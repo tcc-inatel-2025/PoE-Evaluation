@@ -3,6 +3,7 @@ import json
 import requests
 import argparse
 from human_eval.data import read_problems  # already in your humaneval project
+import re
 
 # --- CLI + ENV VARS ---
 parser = argparse.ArgumentParser(description="Generate HumanEval samples from an Ollama model.")
@@ -13,7 +14,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--model",
-    default=os.getenv("OLLAMA_MODEL", "llama3.1"),
+    default=os.getenv("OLLAMA_MODEL", "smollm2:135m"),
     help="Model name (default from OLLAMA_MODEL env var)."
 )
 parser.add_argument(
@@ -25,7 +26,7 @@ parser.add_argument(
 parser.add_argument(
     "--output",
     default=None,  # Will be set dynamically based on model name
-    help="Output file (default: samples/{model_name}_samples.jsonl)."
+    help="Output file (default: data/{model_name}_samples.jsonl)."
 )
 
 args = parser.parse_args()
@@ -34,8 +35,8 @@ OLLAMA_URL = args.url
 MODEL_NAME = args.model
 NUM_SAMPLES_PER_TASK = args.num_samples
 
-# Create samples directory
-SAMPLES_DIR = "samples"
+# Create samples directory at project root level
+SAMPLES_DIR = "../samples"
 os.makedirs(SAMPLES_DIR, exist_ok=True)
 
 # Set output file based on model name if not provided
@@ -45,6 +46,25 @@ if args.output is None:
     OUTPUT_FILE = os.path.join(SAMPLES_DIR, f"{safe_model_name}_samples.jsonl")
 else:
     OUTPUT_FILE = args.output
+
+PROMPT_TEMPLATE = """
+from typing import List, Tuple, Optional, Any
+
+You are a Python assistant. Given the problem description below, generate a single Python function that solves it.
+
+Problem description:
+{problem_prompt}
+
+Requirements:
+- Only write the Python function, nothing else.
+- Do NOT include explanations, markdown, or print statements.
+- Ensure the code is syntactically correct and ready to run.
+
+IMPORTANT: Output your answer as a single valid JSON object with one key: "code".
+For example: {{ "code": "def add(a, b):\\n    return a + b" }}
+
+Write your function in the "code" field below:
+"""
 
 
 def generate_from_ollama(model, prompt):
@@ -69,23 +89,32 @@ def generate_from_ollama(model, prompt):
 
 
 def main():
-    print(f"🚀 Generating samples using model: {MODEL_NAME}")
-    print(f"📁 Results will be saved to: {OUTPUT_FILE}")
+    print(f"Generating samples using model: {MODEL_NAME}")
+    print(f"Results will be saved to: {OUTPUT_FILE}")
     
     problems = read_problems()  # dict: {task_id: {"prompt": "...", ...}}
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f_out:
         for task_id, problem in problems.items():
-            prompt = problem["prompt"] + "\n\n# Only write the Python function, no explanations, no markdown, no print statements, no reasoning."
+            prompt = PROMPT_TEMPLATE.format(problem_prompt=problem["prompt"])
             for _ in range(NUM_SAMPLES_PER_TASK):
                 print(f"[+] Generating for task {task_id} ...")
-                completion = generate_from_ollama(MODEL_NAME, prompt)
+                completion_json = generate_from_ollama(MODEL_NAME, prompt)
+                try:
+                    completion_data = json.loads(completion_json)
+                    completion_code = completion_data.get("code", "").strip()
+                except json.JSONDecodeError:
+                    completion_code = completion_json.strip()
+                
+                completion_code = re.sub(r"^```python\s*|\s*```$", "", completion_code, flags=re.MULTILINE)
+                completion_code = completion_code.strip()
+                
                 record = {
                     "task_id": task_id,
-                    "completion": completion
+                    "completion": completion_code
                 }
                 f_out.write(json.dumps(record) + "\n")
                 f_out.flush()
-    print(f"✅ Done. Samples saved to {OUTPUT_FILE}")
+    print(f"Done. Samples saved to {OUTPUT_FILE}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,164 @@
+{"task_id": "HumanEval/0", "completion": ""}
+{"task_id": "HumanEval/1", "completion": "<|separator|>\n<|code=main.separate_paren_groups|>"}
+{"task_id": "HumanEval/2", "completion": "\"\"\""}
+{"task_id": "HumanEval/3", "completion": ""}
+{"task_id": "HumanEval/4", "completion": "\"\"\"\n\nfrom typing import List\n\n\ndef mean_absolute_deviation(numbers: List[float]) -> float:\n    # <|startof_function|>\n    #\n    return None\n    # <|enod_function|>"}
+{"task_id": "HumanEval/5", "completion": ""}
+{"task_id": "HumanEval/6", "completion": "\"\"\"\n\n# @TODO write your solution here"}
+{"task_id": "HumanEval/7", "completion": ""}
+{"task_id": "HumanEval/8", "completion": "You are not allowed to use any libraries or modules for this exercise.\nHowever, you may write any helper functions you wish to in another file.\n\"\"\""}
+{"task_id": "HumanEval/9", "completion": "\"\"\"\n\n\n# code_block: <code_block>\n# type: ignore\n\n\n# code_block: end"}
+{"task_id": "HumanEval/10", "completion": "\"\"\"\n\nprint(is_palindrome('abba'))"}
+{"task_id": "HumanEval/11", "completion": "'''\n\n\nimport json\nimport unittest\n\nfrom codegenerator.base import BaseGenerator\n\n\nclass CodeGenerator(BaseGenerator):\n\n    @classmethod\n    def generate(cls, text: str) -> Any:\n        return {\n            'code': cls._generate_function_content(text),\n        }\n\n    @staticmethod\n    def _generate_function_content(description: str) -> str:\n\n        lines = []\n\n        for line in description.split('\\n'):\n\n            stripped = line.strip()\n\n            if len(stripped):\n                lines += [f'{line}']\n            elif stripped == '>>>':\n                lines += ['    \"\"\"']\n            elif stripped == \"<<<\":\n                lines += [\"    \"\"\"\"]\n            else:\n                pass\n\n        return '\\n'.join(lines)\n\n\nclass TestCodeGenerator(unittest.TestCase):\n\n    def test_code_generator_basic(self) -> None:\n        self.assertEqual({\n            'code': CodeGenerator._generate_function_content('from typing import List\\n'\n                                                             '\\n'\n                                                             'def string_xor(a: str, b: str) -> str:\\n'\n                                                             \"    ''' Input are two strings a and b consisting only of 1s and 0s.\\n\"\n                                                             '    Perform binary XOR on these inputs and return result also as a string.'\n                                                             '\\n'\n                                                             '>>> string_xor(\\'010\\', \\'110\\')\\n'\n                                                             \"    \\'100\\'\\n\"\n                                                             \"    '''\")\n        }, CodeGenerator.generate(test_input))\n\n    def test_code_generator_no_description(self) -> None:\n        self.assertEqual({\n            'code': CodeGenerator._generate_function_content('from typing import List\\n'\n                                                             '\\n'\n                                                             'def string_xor(a: str, b: str) -> str:\\n')\n\n        }, CodeGenerator.generate(test_input2))\n\n\ntest_input = '''\nfrom typing import List\n\n\ndef string_xor(a: str, b: str) -> str:\n    \"\"\" Input are two strings a and b consisting only of 1s and 0s.\n    Perform binary XOR on these inputs and return result also as a string.\n    >>> string_xor('010', '110')\n    '100'\n    \"\"\"\n'''\n\n\ntest_input2 = '''\nfrom typing import List\ndef string_xor(a: str, b: str) -> str:\n'''\n\n\nif __name__ == \"__main__\":\n    unittest.main()"}
+{"task_id": "HumanEval/12", "completion": "<|begin_solution|>\n\n<|end_solution|>"}
+{"task_id": "HumanEval/13", "completion": ""}
+{"task_id": "HumanEval/14", "completion": ""}
+{"task_id": "HumanEval/15", "completion": "\"\"\"\n\nstring_sequence = lambda n : str( [i for i in range(0,n+1)] ).replace(',', ' ')"}
+{"task_id": "HumanEval/16", "completion": ""}
+{"task_id": "HumanEval/17", "completion": ""}
+{"task_id": "HumanEval/18", "completion": ""}
+{"task_id": "HumanEval/19", "completion": "\"\"\"\n\nimport json\nfrom typing import List, Tuple, Optional, Any\n\n# YOUR CODE GOES HERE\ndef sort_numbers(numbers):\n    pass\n\n\nprint(json.dumps({'code': repr(sort_numbers)}))"}
+{"task_id": "HumanEval/20", "completion": "<|code|>:\n\n\"\"\"\nfrom typing import List, Tuple\n\n\ndef find_closest_elements(numbers: List[float]) -> Tuple[float, float]:\n\tpass"}
+{"task_id": "HumanEval/21", "completion": ""}
+{"task_id": "HumanEval/22", "completion": "'''\nfrom typing import List\n\n\ndef filter_integers(values: List[Any]) -> List[int]:\n    # START YOUR CODE BELOW\n    return list(filter(lambda x: isinstance(x, int), values))\n    # END YOUR CODE"}
+{"task_id": "HumanEval/23", "completion": "def strlen(string: str) -> int:\n    \"\"\" Return length of given string\n    >>> strlen('')\n    0\n    >>> strlen('abc')\n    3\n    \"\"\""}
+{"task_id": "HumanEval/24", "completion": "\"\"\"\n\n\n# <|start_of_code|>\n\n# <|end_of_code|>"}
+{"task_id": "HumanEval/25", "completion": ""}
+{"task_id": "HumanEval/26", "completion": ""}
+{"task_id": "HumanEval/27", "completion": "\"\"\"\nimport json\n\ndef flip_case(string: str) -> str:\n    def isUpper(c):\n        return 'A' <= c and c <= 'Z'\n\n    def isLower(c):\n        return 'a' <= c and c <= 'z'\n\n    if len(string) == 0:\n        return string\n\n    def flip_one(index, c):\n        if index == -1 or not (isUpper(c) or isLower(c)):\n            return None\n\n        new_c = ''\n        if isUpper(c):\n            new_c = chr(ord('a') + ord(c) - ord('A'))\n        elif isLower(c):\n            new_c = chr(ord('A') + ord(c) - ord('a'))\n\n        return index, new_c\n\n    index = len(string) - 1\n    ans = ''\n\n    for i in range(len(string)):\n        # print('i =', i)\n        ans += string[index]\n\n        index, c = flip_one(index, string[index])\n        if not (isUpper(c) or isLower(c)):\n            break\n\n    while index >= 0:\n        ans += string[index]\n\n        index, c = flip_one(index - 1, string[index])\n        if not (isUpper(c) or isLower(c)):\n            break\n\n    return ans\n\nprint('Your code:')\nwith open('/Users/michaelle/Desktop/output.py', 'w') as fout:\n    fout.write('def flip_case(string: str) -> str:\\n    \"\"\" For a given string, flip lowercase characters to uppercase and uppercase to lowercase.\\n    >>> flip_case(\\'Hello\\')\\n    \\'hELLO\\'\\n    \"\"\"\\n' + flip_case.__doc__)\n    fout.write('\\n\\ndef isUpper(c):\\n    return \\'A\\' <= c and c <= \\'Z\\'\\n\\ndef isLower(c):\\n    return \\'a\\' <= c and c <= \\'z\\'')\n    fout.write('    \\n' + flip_case.__code__.co_consts[0])\n\n\nprint('\\nYour code:')\nfout = open('/Users/michaelle/Desktop/output.py', 'r')\nprint(fout.read())\n# print(flip_case)"}
+{"task_id": "HumanEval/28", "completion": "\"\"\""}
+{"task_id": "HumanEval/29", "completion": "\"\"\"\nimport json\n\n\nclass Solution:\n    def filter_by_prefix(self, strings: List[str], prefix: str) -> List[str]:\n        return [word for word in strings if word.startswith(prefix)]\n\n\nif __name__ == \"__main__\":\n    test = Solution()\n    code = \"\"\"<|code|>\"\"\"\n    print(json.dumps({ \"code\": code }))"}
+{"task_id": "HumanEval/30", "completion": ""}
+{"task_id": "HumanEval/31", "completion": ""}
+{"task_id": "HumanEval/32", "completion": ""}
+{"task_id": "HumanEval/33", "completion": ""}
+{"task_id": "HumanEval/34", "completion": "@Author: <NAME>"}
+{"task_id": "HumanEval/35", "completion": ""}
+{"task_id": "HumanEval/36", "completion": "\"\"\""}
+{"task_id": "HumanEval/37", "completion": ""}
+{"task_id": "HumanEval/38", "completion": ""}
+{"task_id": "HumanEval/39", "completion": ""}
+{"task_id": "HumanEval/40", "completion": "\"\"\"\n\n\n\n# YOUR CODE HERE"}
+{"task_id": "HumanEval/41", "completion": "'''\n\n\n# Write your code here.\n\noutput = {\n    \"code\": \"\"\n}"}
+{"task_id": "HumanEval/42", "completion": ""}
+{"task_id": "HumanEval/43", "completion": ""}
+{"task_id": "HumanEval/44", "completion": ""}
+{"task_id": "HumanEval/45", "completion": "\"\"\"\n\n\ndef triangle_area(a: float, h: float) -> float:\n    pass"}
+{"task_id": "HumanEval/46", "completion": "\"\"\""}
+{"task_id": "HumanEval/47", "completion": "# Test cases:\nfrom tests import run_tests\nrun_tests()"}
+{"task_id": "HumanEval/48", "completion": ""}
+{"task_id": "HumanEval/49", "completion": "<|code |>"}
+{"task_id": "HumanEval/50", "completion": ""}
+{"task_id": "HumanEval/51", "completion": "\"\"\""}
+{"task_id": "HumanEval/52", "completion": ""}
+{"task_id": "HumanEval/53", "completion": ""}
+{"task_id": "HumanEval/54", "completion": "<|end_of_problem|>\n\"\"\""}
+{"task_id": "HumanEval/55", "completion": ""}
+{"task_id": "HumanEval/56", "completion": ""}
+{"task_id": "HumanEval/57", "completion": ""}
+{"task_id": "HumanEval/58", "completion": ""}
+{"task_id": "HumanEval/59", "completion": ""}
+{"task_id": "HumanEval/60", "completion": "# Your code here..."}
+{"task_id": "HumanEval/61", "completion": "# Write your answer here:\nanswer = { \"code\": \"\" }"}
+{"task_id": "HumanEval/62", "completion": ""}
+{"task_id": "HumanEval/63", "completion": ""}
+{"task_id": "HumanEval/64", "completion": ""}
+{"task_id": "HumanEval/65", "completion": "# Solution\n\nfrom typing import List, Tuple, Optional, Any\n\nYou are a Python assistant. Given the problem description below, generate a single Python function that solves it.\n\nProblem description:\n\ndef circular_shift(x, shift):\n    \"\"\"Circular shift the digits of the integer x, shift the digits right by shift\n    and return the result as a string.\n    If shift > number of digits, return digits reversed.\n     >>> circular_shift(12, 1)\n     \"21\"\n     >>> circular_shift(12, 2)\n     \"12\"\n    \"\"\"\ndef shift_right(number, shifts):\n    if shifts == 0:\n        return number\n\n    # Convert int to string and back to get digits\n    num_str = str(number)\n    num_len = len(num_str)\n\n    # Determine where we need to start the shift\n    # This is a circular shift (ex. 1234 -> 2341), so we'll just start at the end of the string\n    start = num_len - shifts % num_len\n\n    # Convert our digits to an array and move them in order\n    nums = list(num_str)\n    nums.extend(nums[:start])\n\n    shifted_number = int(''.join(nums[start:]))\n    \n    return str(shifted_number)\n\ndef shift_left(number, shifts):\n    if shifts == 0:\n        return number\n\n    # Convert int to string and back to get digits\n    num_str = str(number)\n    num_len = len(num_str)\n\n    # Determine where we need to start the shift\n    # This is a circular shift (ex. 1234 -> 2341), so we'll just start at the beginning of the string\n    start = shifts % num_len\n\n    nums = list(num_str)\n    shifted_number = int(''.join(nums[start:] + nums[:start]))\n    \n    return str(shifted_number)\n\ndef circular_shift(x, shift):\n    \"\"\"Circular shift the digits of the integer x, shift the digits right by shift\n    and return the result as a string.\n    If shift > number of digits, return digits reversed.\n     >>> circular_shift(12, 1)\n     \"21\"\n     >>> circular_shift(12, 2)\n     \"12\"\n    \"\"\"\n    if shift == 0:\n        return str(x)\n\n    # Figure out the direction of our shift (right or left) and how many shifts\n    sign = -1 if shift < 0 else 1\n    shifts = abs(shift)\n\n    new_number = None\n    if sign == 1:\n        # Move right\n        # Shift by one digit each time, so shift // num_digits times will suffice\n        new_number = shift_right(x, (shifts * num_digits))\n    elif sign == -1:\n        # Move left\n        # Shift by one digit each time, so shift // num_digits times will suffice\n        new_number = shift_left(x, (shifts * num_digits))\n\n    return str(new_number)\n\ndef main():\n    print(\"Please run the unit tests in order to verify your function\")\n\nif __name__ == \"__main__\":\n    main()"}
+{"task_id": "HumanEval/66", "completion": "\"\"\"\n\n# BEGIN ANSWER\ncode = \"\"\"\n\n\"\"\"\n# END ANSWER"}
+{"task_id": "HumanEval/67", "completion": ""}
+{"task_id": "HumanEval/68", "completion": ""}
+{"task_id": "HumanEval/69", "completion": "'''"}
+{"task_id": "HumanEval/70", "completion": "# TODO\n\"\"\""}
+{"task_id": "HumanEval/71", "completion": ""}
+{"task_id": "HumanEval/72", "completion": "'''\ndef will_it_fly(q,w):\n    '''\n    Write a function that returns True if the object q will fly, and False otherwise.\n    The object q will fly if it's balanced (it is a palindromic list) and the sum of its elements is less than or equal the maximum possible weight w.\n\n    Example:\n    will_it_fly([1, 2], 5) \u279e False \n    # 1+2 is less than the maximum possible weight, but it's unbalanced.\n\n    will_it_fly([3, 2, 3], 1) \u279e False\n    # it's balanced, but 3+2+3 is more than the maximum possible weight.\n\n    will_it_fly([3, 2, 3], 9) \u279e True\n    # 3+2+3 is less than the maximum possible weight, and it's balanced.\n\n    will_it_fly([3], 5) \u279e True\n    # 3 is less than the maximum possible weight, and it's balanced.\n    '''\n'''\ndef will_it_fly(q,w):\n    return sum(q) <= w and q[::-1] == q\n'''"}
+{"task_id": "HumanEval/73", "completion": "<|start_of_text|>\n{\"code\":\"def smallest_change(arr):\\n    \\\"\\\"\\\"\\n    Given an array arr of integers, find the minimum number of elements that\\n    need to be changed to make the array palindromic. A palindromic array is an array that\\n    is read the same backwards and forwards.\\n\\n    For example:\\n    smallest_change([1,2,3,5,4,7,9,6]) == 4\\n    smallest_change([1, 2, 3, 4, 3, 2, 2]) == 1\\n    smallest_change([1, 2, 3, 2, 1]) == 0\\n    \\\"\\\"\\\"\\n\\n\"}"}
+{"task_id": "HumanEval/74", "completion": "\"\"\"\n\n\n\n\n<|end_of_code_example|>\n\n# Do not change anything below this line #\n##########################################\n\n\ndef total_match(lst1, lst2):\n    len1 = sum([len(x) for x in lst1])\n    len2 = sum([len(x) for x in lst2])\n\n    if len1 == len2:\n        return lst1\n    elif len1 < len2:\n        return lst1\n    else:\n        return lst2\n\n\ndef generate_solution():\n    tests = [\n        ([], []),\n        (['hi', 'admin'], ['hI', 'Hi']),\n        (['hi', 'admin'], ['hi', 'hi', 'admin', 'project']),\n        (['hi', 'admin'], ['hI', 'hi', 'hi'])\n    ]\n\n    results = []\n\n    for test in tests:\n        result = total_match(*test)\n        if isinstance(result, str):\n            # Special case: this is the correct answer\n            result = eval(result)\n        results.append(result)\n\n    return { 'code': f'print(total_match(\"{tests[0]}\", \"{tests[1]}\"))', 'output': results }"}
+{"task_id": "HumanEval/75", "completion": ""}
+{"task_id": "HumanEval/76", "completion": ""}
+{"task_id": "HumanEval/77", "completion": "<|start_code|><|end_code|>"}
+{"task_id": "HumanEval/78", "completion": "\"\"\"\n\n\ndef hex_key(num):\n    \"\"\"\n    You have been tasked to write a function that receives \n    a hexadecimal number as a string and counts the number of hexadecimal \n    digits that are primes (prime number, or a prime, is a natural number \n    greater than 1 that is not a product of two smaller natural numbers).\n    Hexadecimal digits are 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F.\n    Prime numbers are 2, 3, 5, 7, 11, 13, 17,...\n    So you have to determine a number of the following digits: 2, 3, 5, 7, \n    B (=decimal 11), D (=decimal 13).\n    Note: you may assume the input is always correct or empty string, \n    and symbols A,B,C,D,E,F are always uppercase.\n    Examples:\n    For num = \"AB\" the output should be 1.\n    For num = \"1077E\" the output should be 2.\n    For num = \"ABED1A33\" the output should be 4.\n    For num = \"123456789ABCDEF0\" the output should be 6.\n    For num = \"2020\" the output should be 2.\n     \"\"\"\n    count_list = [2, 3, 5, 7, 11, 13]\n    count = 0\n    for i in range(len(num)):\n        if (int(num[i],16) in count_list):\n            count += 1\n    return count"}
+{"task_id": "HumanEval/79", "completion": ""}
+{"task_id": "HumanEval/80", "completion": "# BEGIN EXAMPLE\n\ndef is_happy(s):\n    \"\"\"You are given a string s.\n    Your task is to check if the string is happy or not.\n    A string is happy if its length is at least 3 and every 3 consecutive letters are distinct\n    For example:\n    is_happy(a) => False\n    is_happy(aa) => False\n    is_happy(abcd) => True\n    is_happy(aabb) => False\n    is_happy(adb) => True\n    is_happy(xyy) => False\n    \"\"\"\n\n    # BEGIN SOLUTION\n\n\n# END SOLUTION"}
+{"task_id": "HumanEval/81", "completion": "\"\"\"\n\n# Write code here\n\nassert numerical_letter_grade([4.0, 3, 1.7, 2, 3.5]) == ['A+', 'B', 'C-', 'C', 'A-']"}
+{"task_id": "HumanEval/82", "completion": "code"}
+{"task_id": "HumanEval/83", "completion": ""}
+{"task_id": "HumanEval/84", "completion": ""}
+{"task_id": "HumanEval/85", "completion": ""}
+{"task_id": "HumanEval/86", "completion": "\"\"\""}
+{"task_id": "HumanEval/87", "completion": "\"\"\"\ndef get_row(lst, x):\n    \"\"\"\n    You are given a 2 dimensional data, as a nested lists, which is similar to matrix, however, unlike matrices, each row may contain a different number of columns. Given lst, and integer x, find integers x in the list, and return list of tuples, [(x1, y1), (x2, y2) ...] such that each tuple is a coordinate - (row, columns), starting with 0. Sort coordinates initially by rows in ascending order. Also, sort coordinates of the row by columns in descending order.\n    \n    Examples:\n    get_row([\n      [1,2,3,4,5,6],\n      [1,2,3,4,1,6],\n      [1,2,3,4,5,1]\n    ], 1) == [(0, 0), (1, 4), (1, 0), (2, 5), (2, 0)]\n    get_row([], 1) == []\n    get_row([[], [1], [1, 2, 3]], 3) == [(2, 2)]\n    \"\"\""}
+{"task_id": "HumanEval/88", "completion": "\"\"\"\n\n\n\nif __name__ == '__main__':\n    pass"}
+{"task_id": "HumanEval/89", "completion": "\"\"\"\n\n# Code Goes Here\nimport string\n\n\ndef encrypt(s):\n    \"\"\"Create a function encrypt that takes a string as an argument and returns a string encrypted with the alphabet being rotated. \n    The alphabet should be rotated in a manner such that the letters shift down by two multiplied to two places.\n    For example:\n    encrypt('hi') returns 'lm'\n    encrypt('asdfghjkl') returns 'ewhjklnop'\n    encrypt('gf') returns 'kj'\n    encrypt('et') returns 'ix'\n     \"\"\"\n    alphabet = list(string.ascii_lowercase)\n\n    rotated = []\n    for letter in s:\n        index = 0\n\n        for index, letter1 in enumerate(alphabet):\n            if letter == letter1:\n                break\n\n        shifted = (index + 2 * 2) % len(alphabet)\n        rotated.append(shifted)\n\n        return ''.join([alphabet[i] for i in rotated])"}
+{"task_id": "HumanEval/90", "completion": "'''\n\nclass Solution:\n    # @param {integer[]} nums\n    # @return {integer[][]}\n    def combinationSum2(self, candidates: List[int], target: int) -> List[List[int]]:\n        ans = []\n        \n        return ans"}
+{"task_id": "HumanEval/91", "completion": ""}
+{"task_id": "HumanEval/92", "completion": "'''\n# BEGIN SOLUTION\n# def any_int(x, y, z):\n#     '''\n#     Create a function that takes 3 numbers.\n#     Returns true if one of the numbers is equal to the sum of the other two, and all numbers are integers.\n#     Returns false in any other cases.\n    \n#     Examples\n#     any_int(5, 2, 7) \u279e True\n    \n#     any_int(3, 2, 2) \u279e False\n\n#     any_int(3, -2, 1) \u279e True\n    \n#     any_int(3.6, -2.2, 2) \u279e False\n  \n\n    \n#      '''\n\n\ndef any_int(x: float, y: float, z: float):\n    if isinstance(x, int) and isinstance(y, int) and isinstance(z, int):\n        return x == (y + z) or y == (x + z) or z == (x + y)\n\n    return False\n\n\n# END SOLUTION"}
+{"task_id": "HumanEval/93", "completion": "\"\"\""}
+{"task_id": "HumanEval/94", "completion": "Solution is at the end of the file.\n\n\n\n\"\"\"\nimport json\n# <your code here>\nif __name__ == \"__main__\":\n    code = \"def add(a, b):\\n    return a + b\\n\"\n\n    print(json.dumps({\"code\": code}))\n\n\"\"\""}
+{"task_id": "HumanEval/95", "completion": ""}
+{"task_id": "HumanEval/96", "completion": "\"\"\""}
+{"task_id": "HumanEval/97", "completion": ""}
+{"task_id": "HumanEval/98", "completion": "\"\"\"\n\n\ndef count_upper(s):\n    \"\"\"\n    Given a string s, count the number of uppercase vowels in even indices.\n    \n    For example:\n    count_upper('aBCdEf') returns 1\n    count_upper('abcdefg') returns 0\n    count_upper('dBBE') returns 0\n    \"\"\""}
+{"task_id": "HumanEval/99", "completion": "# Add your code here, and be sure to remove this line when finished\npass"}
+{"task_id": "HumanEval/100", "completion": "<|\ncode = make_a_pile(2)\nassert code[0] == 2\nassert code[1] == 5\n|\n>"}
+{"task_id": "HumanEval/101", "completion": ""}
+{"task_id": "HumanEval/102", "completion": "\"\"\"\n\n\ndef choose_num(x: int, y: int) -> int:\n    if (y - x <= 2):\n        return -1\n\n    elif ((x + y) % 2 == 0 and x < y ):\n        return max(x + y , y - x )\n    else:\n        return -1"}
+{"task_id": "HumanEval/103", "completion": "\"\"\""}
+{"task_id": "HumanEval/104", "completion": ""}
+{"task_id": "HumanEval/105", "completion": ""}
+{"task_id": "HumanEval/106", "completion": "\"\"\"\n<|start_of_text|>\n\"\"\"\n\n\n# def f(n):\n#     \"\"\" Implement the function f that takes n as a parameter,\n#     and returns a list of size n, such that the value of the element at index i is the factorial of i if i is even\n#     or the sum of numbers from 1 to i otherwise.\n#     i starts from 1.\n#     the factorial of i is the multiplication of the numbers from 1 to i (1 * 2 * ... * i).\n#     Example:\n#     f(5) == [1, 2, 6, 24, 15]\n#      \"\"\"\n\n\ndef f(n):\n    result = []\n    for index in range(1, n+1):\n        if (index % 2 != 0):\n            sum = 0\n            for i in range(1, index + 1):\n                sum += i\n            result.append(sum)\n        else:\n            prod = 1\n            for i in range(1, index + 1):\n                prod *= i\n            result.append(prod)\n    return result\n\n\ndef main():\n    print(f(5))\n    print(\"Hello World!\")\n\n\nif __name__ == \"__main__\":\n    main()"}
+{"task_id": "HumanEval/107", "completion": "\"\"\"\nCODE GOES HERE\n\"\"\"\n\n# Write tests here."}
+{"task_id": "HumanEval/108", "completion": "\"\"\"\n\n\ndef count_nums(arr):\n    \"\"\"\n    Write a function count_nums which takes an array of integers and returns\n    the number of elements which has a sum of digits > 0.\n    If a number is negative, then its first signed digit will be negative:\n    e.g. -123 has signed digits -1, 2, and 3.\n    >>> count_nums([]) == 0\n    >>> count_nums([-1, 11, -11]) == 1\n    >>> count_nums([1, 1, 2]) == 3\n    \"\"\"\n\n\n# This is the required JSON format:\nprint(\n  '{\"code\": \"' + repr(count_nums.__doc__) + '\"}'\n)"}
+{"task_id": "HumanEval/109", "completion": "def move_one_ball(arr):\n    \"\"\"We have an array 'arr' of N integers arr[1], arr[2], ..., arr[N].The\n    numbers in the array will be randomly ordered. Your task is to determine if\n    it is possible to get an array sorted in non-decreasing order by performing \n    the following operation on the given array:\n        You are allowed to perform right shift operation any number of times.\n    \n    One right shift operation means shifting all elements of the array by one\n    position in the right direction. The last element of the array will be moved to\n    the starting position in the array i.e. 0th index. \n\n    If it is possible to obtain the sorted array by performing the above operation\n    then return True else return False.\n    If the given array is empty then return True.\n\n    Note: The given list is guaranteed to have unique elements.\n\n    For Example:\n    \n    move_one_ball([3, 4, 5, 1, 2])==>True\n    Explanation: By performin 2 right shift operations, non-decreasing order can\n                 be achieved for the given array.\n    move_one_ball([3, 5, 4, 1, 2])==>False\n    Explanation:It is not possible to get non-decreasing order for the given\n                array by performing any number of right shift operations.\n                \n    \n    \"\"\"\n\n    return True\n\n\nif __name__ == \"__main__\":\n    print(move_one_ball([3,4,5,1,2]))"}
+{"task_id": "HumanEval/110", "completion": ""}
+{"task_id": "HumanEval/111", "completion": "\"\"\"\ndef histogram(test):"}
+{"task_id": "HumanEval/112", "completion": "\"\"\" \ndef reverse_delete(s,c):\n    \"\"\"Task\n    We are given two strings s and c, you have to deleted all the characters in s that are equal to any character in c\n    then check if the result string is palindrome.\n    A string is called palindrome if it reads the same backward as forward.\n    You should return a tuple containing the result string and True/False for the check.\n    Example\n    For s = \"abcde\", c = \"ae\", the result should be ('bcd',False)\n    For s = \"abcdef\", c = \"b\"  the result should be ('acdef',False)\n    For s = \"abcdedcba\", c = \"ab\", the result should be ('cdedc',True)\n    \"\"\""}
+{"task_id": "HumanEval/113", "completion": "\"\"\"\n\"\"\"\n\ndef odd_count(lst):\n    output = []\n    for i in range(len(lst)):\n        output.append(\"the number of odd elements {}n the str{}ng {} of the {}nput.\".format(sum([int(char) % 2 != 0 for char in lst[i]]), len(lst[i]), len(lst[i]) - sum([int(char) % 2 != 0 for char in lst[i]]), len(lst)))\n    return output"}
+{"task_id": "HumanEval/114", "completion": ""}
+{"task_id": "HumanEval/115", "completion": ""}
+{"task_id": "HumanEval/116", "completion": "\"\"\""}
+{"task_id": "HumanEval/117", "completion": ""}
+{"task_id": "HumanEval/118", "completion": ""}
+{"task_id": "HumanEval/119", "completion": "\"\"\"\ndef match_parens(lst):\n    '''\n    You are given a list of two strings, both strings consist of open\n    parentheses '(' or close parentheses ')' only.\n    Your job is to check if it is possible to concatenate the two strings in\n    some order, that the resulting string will be good.\n    A string S is considered to be good if and only if all parentheses in S\n    are balanced. For example: the string '(())()' is good, while the string\n     '())' is not.\n    Return 'Yes' if there's a way to make a good string, and return 'No' otherwise.\n\n    Examples:\n    match_parens(['()(',  '))']) == 'Yes'\n    match_parens([')',  '))'])  == 'No'\n    '''\n\n\"\"\""}
+{"task_id": "HumanEval/120", "completion": ""}
+{"task_id": "HumanEval/121", "completion": "\"\"\"\n\n# <|start_of_generated_code|>\n\n# <|end_of_generated_code|>"}
+{"task_id": "HumanEval/122", "completion": "\"\"\"\narr = [111,21,3,4000,5,6,7,8,9]\nk= 4\n#Output: 24 # sum of 21 + 3\n\n\ndef addElements(arr, k):\n    return sum([x for x in arr if len(str(x))<=2][:k])\n\n\nprint(addElements(arr, k))"}
+{"task_id": "HumanEval/123", "completion": ""}
+{"task_id": "HumanEval/124", "completion": "<|begin_of_text|>: {\"code\": \"\n\n\"}"}
+{"task_id": "HumanEval/125", "completion": ""}
+{"task_id": "HumanEval/126", "completion": ""}
+{"task_id": "HumanEval/127", "completion": "\"\"\"\n\n\n\n\n\"\"\"\n<|begin_solution|>|end_solution|><|>\n{\n    \"code\": \"def intersection(interval1, interval2):\\n    return 'YES' if (interval1[0] <= interval2[1] and\\n        interval1[1] >= interval2[0]) else 'NO'\"\n}\n<|end_solution|><|>\n\"\"\""}
+{"task_id": "HumanEval/128", "completion": ""}
+{"task_id": "HumanEval/129", "completion": ""}
+{"task_id": "HumanEval/130", "completion": "<|code|><|end_of_code|>"}
+{"task_id": "HumanEval/131", "completion": "\"\"\"\n\ndef digits(n):\n    sum = 0\n    for i in range (1,len(str(n))):\n        if n%2 != 0 :\n            sum += int(str[i])\n    return sum\n    #return 0\n\n\n#print(digits(4))"}
+{"task_id": "HumanEval/132", "completion": "# Code"}
+{"task_id": "HumanEval/133", "completion": "\"\"\"\n\n# NOTE: This problem is to help you practice Python syntax, not to test your programming skills!\n\ndef sum_squares(lst):\n    return 0\n\nif __name__ == '__main__':\n    assert sum_squares([]) == 0\n    assert sum_squares([1]) == 1\n    assert sum_squares([2]) == 4\n    assert sum_squares([5,7,-3]) == 89\n\n    print(\"success\")"}
+{"task_id": "HumanEval/134", "completion": ""}
+{"task_id": "HumanEval/135", "completion": "arr = [274631, 520987, 108376, 165195, 210963, 217013, 234587, 244177, 270039, 284036]\nresult = can_arrange(arr)"}
+{"task_id": "HumanEval/136", "completion": ""}
+{"task_id": "HumanEval/137", "completion": "import json\nprint(json.dumps({ \"code\": <function body> }))"}
+{"task_id": "HumanEval/138", "completion": ""}
+{"task_id": "HumanEval/139", "completion": "\"\"\"\nCode here.\n\"\"\""}
+{"task_id": "HumanEval/140", "completion": ""}
+{"task_id": "HumanEval/141", "completion": "Note: Please be as precise and detailed as possible with your descriptions."}
+{"task_id": "HumanEval/142", "completion": "from typing import List, Tuple, Optional, Any"}
+{"task_id": "HumanEval/143", "completion": ""}
+{"task_id": "HumanEval/144", "completion": ""}
+{"task_id": "HumanEval/145", "completion": "\"\"\"\n\n\ndef order_by_points(nums):\n    \"\"\"\n    Write a function which sorts the given list of integers\n    in ascending order according to the sum of their digits.\n    Note: if there are several items with similar sum of their digits,\n    order them based on their index in original list.\n\n    For example:\n     >>> order_by_points([1, 11, -1, -11, -12]) == [-1, -11, 1, -12, 11]\n     >>> order_by_points([]) == []\n    \"\"\"\n\n\nif __name__ == \"__main__\":\n\n    nums = [10, 3495687, 192734, 123, 11, 9999]\n    \n    print(order_by_points(nums))"}
+{"task_id": "HumanEval/146", "completion": "# Start of text\n\ndef specialFilter(nums):\n    cnt = 0\n    for n in nums:\n        if n > 10 and (n % 2 != 0 or ((abs(n) // 10) % 2 == 0)) :\n            cnt += 1\n    return cnt"}
+{"task_id": "HumanEval/147", "completion": ""}
+{"task_id": "HumanEval/148", "completion": ""}
+{"task_id": "HumanEval/149", "completion": "\"\"\""}
+{"task_id": "HumanEval/150", "completion": "\"\"\""}
+{"task_id": "HumanEval/151", "completion": ""}
+{"task_id": "HumanEval/152", "completion": "\"\"\"\n\ndef compare(game, guess):\n    return [abs(guess[i]-game[i]) for i in range(len(game))]"}
+{"task_id": "HumanEval/153", "completion": ""}
+{"task_id": "HumanEval/154", "completion": "\"\"\""}
+{"task_id": "HumanEval/155", "completion": ""}
+{"task_id": "HumanEval/156", "completion": "\"\"\"\n\nromanDict = {1 : 'i', 5 : 'v', 4 : 'iv', 9 : 'ix'}\ndef int_to_mini_roman(number):\n    \"\"\"\n    Given a positive integer, obtain its roman numeral equivalent as a string,\n    and return it in lowercase.\n    Restrictions: 1 <= num <= 1000\n\n    Examples:\n    >>> int_to_mini_roman(19) == 'xix'\n    >>> int_to_mini_roman(152) == 'clii'\n    >>> int_to_mini_roman(426) == 'cdxxvi'\n    \"\"\""}
+{"task_id": "HumanEval/157", "completion": ""}
+{"task_id": "HumanEval/158", "completion": ""}
+{"task_id": "HumanEval/159", "completion": "\"\"\"\n\n\"\"\"\n>>> code = \"\" # Add your solution to this line <---------------------------------\n>>> import json\n>>> result = { \"code\": code }\n>>> print(json.dumps(result))\n\"\"\""}
+{"task_id": "HumanEval/160", "completion": ""}
+{"task_id": "HumanEval/161", "completion": "\"\"\"\n\n# The following code is provided as a stub for you to modify:\nimport json\n\n\nclass PythonFunction:\n    def __init__(self, name):\n        self.name = name\n\n    def __call__(self, *args, **kwargs):\n        return None\n\n    def __str__(self):\n        return f\"{self.__class__.__name__}({self.name})\""}
+{"task_id": "HumanEval/162", "completion": "\"\"\"\n\ncode = \"\"\"\n\"\"\""}
+{"task_id": "HumanEval/163", "completion": ""}

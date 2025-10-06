@@ -1,8 +1,11 @@
 #Models
 ollama_models
 human-eval
-results
-samples
+
+# Data files
+results/
+results/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
