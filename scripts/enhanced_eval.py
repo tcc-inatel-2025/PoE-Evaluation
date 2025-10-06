@@ -249,10 +249,19 @@ def compute_overall_score(results_file, output_file=None):
 
     poe_mean = overall_sum / count if count > 0 else 0.0
 
-    # Export CSV
+    # Export CSV - generate filename based on results file
     df = pd.DataFrame(results)
-    csv_file = "results/evaluation_summary.csv"
-    df = pd.DataFrame(results)
+    
+    # Create summary directory if it doesn't exist
+    summary_dir = "../results/summary"
+    os.makedirs(summary_dir, exist_ok=True)
+    
+    # Extract model name from results file path
+    # e.g., "../results/smollm2_135m_results.jsonl" -> "smollm2_135m"
+    results_basename = os.path.basename(results_file)
+    model_name = results_basename.replace("_results.jsonl", "")
+    csv_file = f"{summary_dir}/{model_name}_params_summary.csv"
+    
     columns = [
         "task_id", "passed",
         "avg_cyclomatic_complexity", "max_cyclomatic_complexity",
@@ -272,12 +281,12 @@ def entry_point(
     n_workers: int = 4,
     timeout: float = 3.0,
     problem_file: str = HUMAN_EVAL,
-    samples_dir: str = "samples"
+    samples_dir: str = "../samples"
 ):
     k_list = list(map(int, k.split(",")))
     
-    # Create results directory
-    results_dir = "results"
+    # Create results directory at project root level
+    results_dir = "../results"
     os.makedirs(results_dir, exist_ok=True)
 
     # Discover all sample files

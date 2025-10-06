@@ -35,8 +35,8 @@ OLLAMA_URL = args.url
 MODEL_NAME = args.model
 NUM_SAMPLES_PER_TASK = args.num_samples
 
-# Create samples directory
-SAMPLES_DIR = "samples"
+# Create samples directory at project root level
+SAMPLES_DIR = "../samples"
 os.makedirs(SAMPLES_DIR, exist_ok=True)
 
 # Set output file based on model name if not provided
