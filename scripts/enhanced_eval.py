@@ -1,18 +1,18 @@
 import time
 import types
-import fire
+import fire  # pyright: ignore[reportMissingImports]
 import sys
 import json
 import gzip
 import tempfile
 import os
 import glob
-from human_eval.data import HUMAN_EVAL
-from human_eval.evaluation import evaluate_functional_correctness
-from radon.complexity import cc_visit
+from human_eval.data import HUMAN_EVAL  # pyright: ignore[reportMissingImports]
+from human_eval.evaluation import evaluate_functional_correctness  # pyright: ignore[reportMissingImports]
+from radon.complexity import cc_visit  # pyright: ignore[reportMissingImports]
 from tqdm import tqdm
-from pylint.lint import Run
-import pandas as pd
+from pylint.lint import Run  # pyright: ignore[reportMissingImports]
+import pandas as pd  # pyright: ignore[reportMissingImports]
 import matplotlib.pyplot as plt
 
 # ==============================
