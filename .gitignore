@@ -3,9 +3,8 @@ ollama_models
 human-eval
 
 # Data files
-data/samples.jsonl
-results/samples.jsonl_results.jsonl
-results/evaluation_summary.csv
+results/
+results/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
