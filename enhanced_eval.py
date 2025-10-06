@@ -1,3 +1,5 @@
+import time
+import types
 import fire
 import sys
 import json
@@ -8,6 +10,8 @@ from human_eval.evaluation import evaluate_functional_correctness
 from radon.complexity import cc_visit
 from tqdm import tqdm
 from pylint.lint import Run
+import pandas as pd
+import matplotlib.pyplot as plt
 
 # ==============================
 # CONFIG
@@ -150,7 +154,7 @@ def evaluate_efficiency(results_file, max_time=MAX_EXEC_TIME):
             try:
                 local_env = {}
                 exec(code, {}, local_env)
-                funcs = [v for v in local_env.values() if callable(v)]
+                funcs = [v for v in local_env.values() if isinstance(v, types.FunctionType)]
                 if funcs:
                     func = funcs[0]
                     start = time.time()
@@ -174,10 +178,7 @@ def evaluate_efficiency(results_file, max_time=MAX_EXEC_TIME):
     return results_file
 
 
-def compute_overall_score(results_file):
-    """
-    Combina todas as métricas em um único score PoE.
-    """
+def compute_overall_score(results_file, output_file=None):
     weights = {
         "functional_correctness": 0.4,
         "avg_cyclomatic_complexity": 0.2,
@@ -185,36 +186,57 @@ def compute_overall_score(results_file):
         "efficiency_score": 0.1,
         "loc_score": 0.1,
     }
-
     results = []
-
+    overall_sum = 0.0
+    count = 0
     with open(results_file, "r") as f:
         for line in tqdm(f, desc="Computing overall PoE score"):
             sample = json.loads(line)
             code = sample.get("completion", "")
-
-            # LOC
+            
+            # LOC 
             loc = len([l for l in code.splitlines() if l.strip()])
-            loc_score = scale_loc(loc)
-            sample["loc_score"] = loc_score
-
-            # Functional correctness (usa 'passed' ou 0/1)
+            sample["loc_score"] = scale_loc(loc)
+            
+            # Functional correctness
             func_correct = sample.get("passed", 0)
             sample["functional_correctness"] = float(func_correct)
-
-            total = 0.0
-            for k, w in weights.items():
-                val = sample.get(k, 0) or 0
-                total += val * w
+            
+            # Cálculo do score total
+            total = sum((sample.get(k,0) or 0) * w for k,w in weights.items())
             sample["overall_score"] = total
+            
+            overall_sum += total
+            count += 1
             results.append(sample)
 
-    with open(results_file, "w") as f:
+    if output_file is None:
+        output_file = results_file.replace("_results.jsonl", "_enhanced_results.jsonl")
+
+    # Salvar JSONL 
+    with open(output_file, "w") as f:
         for sample in results:
             f.write(json.dumps(sample) + "\n")
 
-    print(f"Overall PoE score computed and added. Results overwritten in {results_file}")
-    return results_file
+    poe_mean = overall_sum / count if count > 0 else 0.0
+    print(f"\n=== FINAL SCORE ===")
+    print(f"Average PoE score (mean): {poe_mean:.4f}")
+    print(f"Results saved to: {output_file}")
+
+    # Export CSV
+    df = pd.DataFrame(results)
+    csv_file = "evaluation_summary.csv"
+    df = pd.DataFrame(results)
+    columns = [
+        "task_id", "passed",
+        "avg_cyclomatic_complexity", "max_cyclomatic_complexity",
+        "style_score", "efficiency_score", "loc_score",
+        "functional_correctness", "overall_score"
+    ]
+    df[columns].to_csv(csv_file, index=False)
+    print(f"Results exported to CSV: {csv_file}")
+
+    return output_file, poe_mean
 
 # ==============================
 # ENTRY POINT
@@ -226,10 +248,6 @@ def entry_point(
     problem_file: str = HUMAN_EVAL,
     sample_file: str = "samples.jsonl"
 ):
-    """
-    Avalia corretude funcional, complexidade ciclomática, estilo, eficiência
-    e combina tudo em um score unificado (PoE).
-    """
     k_list = list(map(int, k.split(",")))
 
     print("=== Evaluating functional correctness ===")
@@ -249,11 +267,12 @@ def entry_point(
     results_file = evaluate_efficiency(results_file)
 
     print("=== Computing overall score (PoE) ===")
-    results_file = compute_overall_score(results_file)
+    final_file, poe_mean = compute_overall_score(results_file)
 
     print("\nEvaluation complete!")
     print(f"Pass@k metrics: {pass_at_k}")
-    print(f"Enhanced results file: {results_file}")
+    print(f"Average overall PoE score: {poe_mean:.4f}")
+    print(f"Enhanced results file: {final_file}")
 
 
 def main():

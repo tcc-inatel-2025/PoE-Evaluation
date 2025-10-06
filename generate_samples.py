@@ -14,7 +14,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--model",
-    default=os.getenv("OLLAMA_MODEL", "smollm2:360m"),
+    default=os.getenv("OLLAMA_MODEL", "smollm2:135m"),
     help="Model name (default from OLLAMA_MODEL env var)."
 )
 parser.add_argument(
