@@ -2,7 +2,7 @@ import os
 import json
 import requests
 import argparse
-from human_eval.data import read_problems  # already in your humaneval project
+from human_eval.data import read_problems  # already in your humaneval project  # pyright: ignore[reportMissingImports]
 import re
 
 # --- CLI + ENV VARS ---
