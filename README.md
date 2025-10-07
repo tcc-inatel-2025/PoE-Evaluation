@@ -551,7 +551,7 @@ Se você usar este framework em sua pesquisa, por favor cite:
   title = {PoE-Evaluation: Product of Experts Framework for LLM Code Evaluation},
   year = {2025},
   publisher = {GitHub},
-  url = {https://github.com/tcc-inatel-2025/poe-evaluation},
+  url = {https://github.com/tcc-inatel-2025/PoE-Evaluation},
   version = {1.0.0}
 }
 ```
