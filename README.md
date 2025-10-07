@@ -14,24 +14,23 @@
 ---
 
 ## ❇️ Índice
-
-- [Sobre o Projeto](sobre-o-projeto)
-- [Arquitetura](arquitetura)
-- [Pré-requisitos](pre-requisitos)
-- [Instalacao](instalacao)
-- [Pipeline Completo](pipeline-completo)
-- [Metricas do Product of Experts](metricas-do-product-of-experts)
-- [Interpretacao dos Resultados](interpretacao-dos-resultados)
-- [Estrutura do Projeto](estrutura-do-projeto)
-- [Comandos Úteis](comandos-uteis)
-- [Referencias](referencias)
-- [Licença](licenca)
-- [Autores](autores)
-- [Citação Acadêmica](citacao-academica)
-- [Estatísticas do Projeto](estatisticas-do-projeto)
+- [Sobre o Projeto](#sobre-o-projeto)
+- [Arquitetura](#arquitetura)
+- [Pré-requisitos](#pre-requisitos)
+- [Instalação](#instalacao)
+- [Pipeline Completo](#pipeline-completo)
+- [Métricas do Product of Experts](#metricas-do-product-of-experts)
+- [Interpretação dos Resultados](#interpretacao-dos-resultados)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Comandos Úteis](#comandos-uteis)
+- [Referências](#referencias)
+- [Licença](#licenca)
+- [Autores](#autores)
+- [Citação Acadêmica](#citacao-academica)
 
 ---
 
+<a name="sobre-o-projeto"></a>
 ## ❇️ Sobre o Projeto
 
 O **PoE-Evaluation** é um framework robusto para avaliação multidimensional de Large Language Models (LLMs) em tarefas de geração de código. Utilizando o benchmark **HumanEval** como base, o projeto implementa a metodologia **Product of Experts (PoE)** para combinar múltiplas métricas de qualidade em um score unificado e interpretável.
@@ -54,6 +53,7 @@ O **PoE-Evaluation** é um framework robusto para avaliação multidimensional d
 
 ---
 
+<a name="arquitetura"></a>
 ## ❇️ Arquitetura
 
 ```mermaid
@@ -121,6 +121,7 @@ graph TB
 
 ---
 
+<a name="pre-requisitos"></a>
 ## ❇️ Pré-requisitos
 
 ### Software Necessário
@@ -140,6 +141,7 @@ graph TB
 
 ---
 
+<a name="instalacao"></a>
 ## ❇️ Instalação
 
 ### 1. Clone o Repositório
@@ -169,6 +171,7 @@ docker ps
 
 ---
 
+<a name="pipeline-completo"></a>
 ## ❇️ Pipeline Completo
 
 ### Visão Geral do Fluxo
@@ -326,6 +329,7 @@ Agora você terá toda a estrutura de arquivos localmente!
 
 ---
 
+<a name="metricas-do-product-of-experts"></a>
 ## ❇️ Métricas do Product of Experts
 
 ### Fórmula Matemática
@@ -424,6 +428,7 @@ def scale_loc(loc, ref=50.0):
 
 ---
 
+<a name="interpretacao-dos-resultados"></a>
 ## ❇️ Interpretação dos Resultados
 
 ### Classificação de Scores
@@ -438,6 +443,7 @@ def scale_loc(loc, ref=50.0):
 
 ---
 
+<a name="estrutura-do-projeto"></a>
 ## ❇️ Estrutura do Projeto
 
 ### Arquivos-Chave
@@ -451,6 +457,7 @@ def scale_loc(loc, ref=50.0):
 
 ---
 
+<a name="comandos-uteis"></a>
 ## ❇️ Comandos Úteis
 
 ### Gerenciamento de Containers
@@ -470,6 +477,7 @@ docker compose down -v
 ```
 ---
 
+<a name="referencias"></a>
 ## ❇️ Referências
 
 ### Papers & Benchmarks
@@ -492,6 +500,7 @@ docker compose down -v
 
 ---
 
+<a name="licenca"></a>
 ## ❇️ Licença
 
 Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](LICENSE) para detalhes.
@@ -521,6 +530,7 @@ Este projeto utiliza:
 
 ---
 
+<a name="autores"></a>
 ## ❇️ Autores
 
 ### Equipe de Desenvolvimento
@@ -530,6 +540,7 @@ Este projeto utiliza:
 - [Caroliny A. Teixeira](https://github.com/carolinyat)
 
 
+<a name="citacao-academica"></a>
 ## ❇️ Citação Acadêmica
 
 Se você usar este framework em sua pesquisa, por favor cite:
@@ -545,25 +556,12 @@ Se você usar este framework em sua pesquisa, por favor cite:
 }
 ```
 
----
-
-## ❇️ Estatísticas do Projeto
-
-![GitHub stars](https://img.shields.io/github/stars/tcc-inatel-2025/PoE-Evaluation?style=social)
-![GitHub forks](https://img.shields.io/github/forks/tcc-inatel-2025/PoE-Evaluation?style=social)
-![GitHub issues](https://img.shields.io/github/issues/tcc-inatel-2025/PoE-Evaluation)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/tcc-inatel-2025/PoE-Evaluation)
-![License](https://img.shields.io/github/license/tcc-inatel-2025/PoE-Evaluation)
-![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
-![Docker](https://img.shields.io/badge/docker-20.10%2B-blue)
-
----
-
 <div align="center">
 
 ### ⭐ Se este projeto ajudou sua pesquisa ou trabalho, considere dar uma estrela!
 
 **Desenvolvido com ❤️ para a comunidade acadêmica**
+
 **Happy Evaluating! 🎉**
 
 </div>
