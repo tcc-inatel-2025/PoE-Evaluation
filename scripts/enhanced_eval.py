@@ -208,18 +208,11 @@ def evaluate_efficiency(results_file, max_time=MAX_EXEC_TIME):
 
 
 def compute_overall_score(results_file, output_file=None):
-    weights = {
-        "functional_correctness": 0.4,
-        "avg_cyclomatic_complexity": 0.2,
-        "style_score": 0.2,
-        "efficiency_score": 0.1,
-        "loc_score": 0.1,
-    }
     results = []
     overall_sum = 0.0
     count = 0
     with open(results_file, "r") as f:
-        for line in tqdm(f, desc="Computing overall PoE score"):
+        for line in tqdm(f, desc="Computing overall PoE score (product of experts)"):
             sample = json.loads(line)
             code = sample.get("completion", "")
             
@@ -231,8 +224,35 @@ def compute_overall_score(results_file, output_file=None):
             func_correct = sample.get("passed", 0)
             sample["functional_correctness"] = float(func_correct)
             
-            # Cálculo do score total
-            total = sum((sample.get(k,0) or 0) * w for k,w in weights.items())
+            # Product of experts calculation (excluding functional correctness)
+            # Functional correctness acts as a binary gatekeeper
+            func_correctness = sample.get("functional_correctness", 0) or 0
+            
+            # Continuous quality metrics for product of experts
+            quality_scores = [
+                sample.get("avg_cyclomatic_complexity", 0) or 0,
+                sample.get("style_score", 0) or 0,
+                sample.get("efficiency_score", 0) or 0,
+                sample.get("loc_score", 0) or 0
+            ]
+            
+            # Calculate product of experts for quality metrics (non-zero values only)
+            non_zero_quality_scores = [score for score in quality_scores if score > 0]
+            if non_zero_quality_scores:
+                # Product of experts: multiply all non-zero quality scores
+                quality_product = 1.0
+                for score in non_zero_quality_scores:
+                    quality_product *= score
+                # Take the geometric mean to normalize
+                quality_score = quality_product ** (1.0 / len(non_zero_quality_scores))
+            else:
+                quality_score = 0.0
+            
+            # Overall score: functional correctness acts as gatekeeper
+            # If functional correctness fails (0), overall score is 0
+            # If functional correctness passes (1), overall score is the quality score
+            total = func_correctness * quality_score
+                
             sample["overall_score"] = total
             
             overall_sum += total
@@ -260,7 +280,7 @@ def compute_overall_score(results_file, output_file=None):
     # e.g., "../results/smollm2_135m_results.jsonl" -> "smollm2_135m"
     results_basename = os.path.basename(results_file)
     model_name = results_basename.replace("_results.jsonl", "")
-    csv_file = f"{summary_dir}/{model_name}_params_summary.csv"
+    csv_file = f"{summary_dir}/{model_name}_summary.csv"
     
     columns = [
         "task_id", "passed",

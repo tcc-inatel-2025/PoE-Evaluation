@@ -13,7 +13,7 @@ RUN git clone https://github.com/openai/human-eval.git /workspace/human-eval
 
 # Install Python packages
 RUN pip install --no-cache-dir -e /workspace/human-eval && \
-    pip install --no-cache-dir requests radon pylint pandas matplotlib
+    pip install --no-cache-dir requests radon pylint pandas matplotlib seaborn
 
 # Set default command
 CMD ["bash"]
