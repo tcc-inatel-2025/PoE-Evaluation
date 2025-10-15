@@ -1,0 +1,164 @@
+{"task_id": "HumanEval/0", "completion": ""}
+{"task_id": "HumanEval/1", "completion": "\"\"\""}
+{"task_id": "HumanEval/2", "completion": ""}
+{"task_id": "HumanEval/3", "completion": ""}
+{"task_id": "HumanEval/4", "completion": "*Hint*:\n- Use Google to find relevant functions and/or methods.\n- Refer back to the previous problems for some inspiration on what you need to do."}
+{"task_id": "HumanEval/5", "completion": "\"\"\"\n\n\ndef intersperse(numbers: List[int], delimeter: int) -> List[int]:\n    \"\"\" Insert a number 'delimeter' between every two consecutive elements of input list `numbers'\n    >>> intersperse([], 4)\n    []\n    >>> intersperse([1, 2, 3], 4)\n    [1, 4, 2, 4, 3]\n    \"\"\"\n\n    # YOUR CODE GOES HERE"}
+{"task_id": "HumanEval/6", "completion": ""}
+{"task_id": "HumanEval/7", "completion": ""}
+{"task_id": "HumanEval/8", "completion": "\"\"\"\n\nimport json\n\n\ndef sum_product(numbers):\n    return tuple([sum(numbers), reduce(lambda a, b : a * b , numbers)])\n\n\nprint(json.dumps({ \"code\": str(sum_product) }))"}
+{"task_id": "HumanEval/9", "completion": ""}
+{"task_id": "HumanEval/10", "completion": ""}
+{"task_id": "HumanEval/11", "completion": "\"\"\"\n\nfrom json import loads as parse_json\nfrom urllib.parse import quote\n\nfrom jinja2 import Template\n\n\ndef load_template(filename):\n    with open(filename) as f:\n        return Template(f.read())\n\n\ndef get_answer():\n    template = load_template(\"template.py\")\n\n    return {\n        \"code\": template.render()\n    }\n\n\nif __name__ == \"__main__\":\n    # Test the function by printing out the JSON object that contains your answer:\n    print(parse_json(quote(get_answer(), safe=\"\")))"}
+{"task_id": "HumanEval/12", "completion": "<|code|><|code_placeholder|>|\n\"\"\"\n\ncode = \"\"\"\n\"\"\"\n\nprint({ \"code\": code })"}
+{"task_id": "HumanEval/13", "completion": ""}
+{"task_id": "HumanEval/14", "completion": "# Code generation script #\n\n# The code snippet you're generating is given here as input\ndata = json.loads(sys.argv[1])\n\n# Generate and output a JSON object with one key \"code\".\nprint(json.dumps({ \"code\": \""}
+{"task_id": "HumanEval/15", "completion": ""}
+{"task_id": "HumanEval/16", "completion": "# TODO - write code here!\n# ..."}
+{"task_id": "HumanEval/17", "completion": ""}
+{"task_id": "HumanEval/18", "completion": ""}
+{"task_id": "HumanEval/19", "completion": ""}
+{"task_id": "HumanEval/20", "completion": "\"\"\"\n    write your code here\n\"\"\""}
+{"task_id": "HumanEval/21", "completion": "{ \"code\": <|function_body|> }"}
+{"task_id": "HumanEval/22", "completion": "\"\"\"\n\nfrom typing import List, Any\n\n\ndef filter_integers(values):\n    ints = []\n\n    for value in values:\n        if type(value) == int or type(value) == float:\n            ints.append(int(value))\n\n    return ints"}
+{"task_id": "HumanEval/23", "completion": ""}
+{"task_id": "HumanEval/24", "completion": ""}
+{"task_id": "HumanEval/25", "completion": ""}
+{"task_id": "HumanEval/26", "completion": ""}
+{"task_id": "HumanEval/27", "completion": ""}
+{"task_id": "HumanEval/28", "completion": "\"\"\""}
+{"task_id": "HumanEval/29", "completion": "\"\"\""}
+{"task_id": "HumanEval/30", "completion": ""}
+{"task_id": "HumanEval/31", "completion": ""}
+{"task_id": "HumanEval/32", "completion": "\"\"\""}
+{"task_id": "HumanEval/33", "completion": ""}
+{"task_id": "HumanEval/34", "completion": "\"\"\"\n\nimport json\n\n\ndef generate_solution():\n    \"\"\"Generate a solution to this problem.\"\"\"\n    # TODO\n    code = \"\"\n    code += \"\\n\".join(line.rstrip() for line in __doc__.splitlines()) + \"\\n\"\n    return json.dumps({\"code\": code})\n\n\nif __name__ == \"__main__\":\n    print(generate_solution(), end=\"\")"}
+{"task_id": "HumanEval/35", "completion": "# your code here\n\n\"\"\"\n\n\nimport unittest\nfrom solution import max_element as func\n\nclass TestMaxElement(unittest.TestCase):\n    def test(self) -> None:\n        self.assertEqual(func([1, 2, 3]), 3)\n        self.assertEqual(func([5, 3, -5, 2, -3, 3, 9, 0, 123, 1, -10]), 123)\n\n\nif __name__ == '__main__':\n    unittest.main()"}
+{"task_id": "HumanEval/36", "completion": "\"\"\"\n\nfizz_buzz ="}
+{"task_id": "HumanEval/37", "completion": ""}
+{"task_id": "HumanEval/38", "completion": "\"\"\"\ncode = \"\"\"\ndef encode_cyclic(s):\n    groups = [s[(3 * i):min((3 * i + 3), len(s))] for i in range((len(s) // 3 + 1))]\n    groups = [(group[1:] + group[0]) if len(group) == 3 else group for group in groups]\n    return \"\".join(groups)\n\"\"\""}
+{"task_id": "HumanEval/39", "completion": "# YOUR CODE HERE!"}
+{"task_id": "HumanEval/40", "completion": ""}
+{"task_id": "HumanEval/41", "completion": "\"\"\"\n\nfrom collections import namedtuple\n\nRoad = namedtuple(\"Road\", (\"lcars\", \"rcars\"))\n\n\ndef car_race_collision(n):\n    \"\"\"\n    Imagine a road that'a perfectly straight infinitely long line.\n    n cars are driving left to right;  simultaneously, a different set of n cars\n    are driving right to left.   The two sets of cars start out being very far from\n    each other.  All cars move in the same speed.  Two cars are said to collide\n    when a car that'a moving left to right hits a car that'a moving right to left.\n    However, the cars are infinitely sturdy and strong; as a result, they continue\n    moving in their trajectory as if they did not collide.\n\n    This function outputs the number of such collisions.\n    \"\"\"\n    return 42\n\n\ndef format_output(code):\n    formatted = {\n        \"code\": code,\n    }\n\n    return formatted\n\n\nif __name__ == \"__main__\":\n    import argparse\n\n    parser = argparse.ArgumentParser(description=\"A Python assistant.\")\n    parser.add_argument(\"--input\", help=\"A JSON file of inputs to feed into the function.\")\n    args = parser.parse_args()\n\n    with open(args.input) as f:\n        input_dict = json.load(f)\n\n        try:\n            output = car_race_collision(**input_dict[\"params\"])\n\n            print(json.dumps({\"output\": output}))\n        except Exception as e:\n            print(e)"}
+{"task_id": "HumanEval/42", "completion": "Your code here...\n<|>\n\n\"\"\"\n\ndef incr_list(l):\n    newList = [num + 1 for num in l]\n    return newList\n\n\nprint(incr_list([5,3,6]))"}
+{"task_id": "HumanEval/43", "completion": ""}
+{"task_id": "HumanEval/44", "completion": "\"\"\"\n\n\n# Write you code here."}
+{"task_id": "HumanEval/45", "completion": "\"\"\"\n\n# 1. Write the code that solves the above problem description here:\n\n\n# 2. If you need to run tests for this function, write them below:\n\n\n\ndef main():\n    pass\n\n\n\n\nif __name__ == '__main__':\n    import doctest\n    doctest.testmod()\n\n    if doctest.master:\n        try:\n            from IPython.lib.display import Javascript\n            js = \"\"\"jQuery(function(){jQuery('.input_area').toggle(); jQuery('.output_prompt').toggle();});\"\"\"\n            Javascript(js)\n        except ImportError:\n            pass"}
+{"task_id": "HumanEval/46", "completion": "\"\"\"\n\nclass Solution():\n    # @param n an integer\n    # @return an integer f[n] \n    def fib4(self, n):\n        # Write your code here"}
+{"task_id": "HumanEval/47", "completion": "<|code|>"}
+{"task_id": "HumanEval/48", "completion": ""}
+{"task_id": "HumanEval/49", "completion": "\"\"\"\n\nYour code here. Make sure it passes the doctests above!"}
+{"task_id": "HumanEval/50", "completion": ""}
+{"task_id": "HumanEval/51", "completion": ""}
+{"task_id": "HumanEval/52", "completion": "\"\"\"\n\n# Solution\n\n\ndef below_threshold(l, t):\n    \"\"\"Return True if all numbers in the list l are below threshold t.\n\n    >>> below_threshold([1, 2, 4, 10], 100)\n    True\n    >>> below_threshold([1, 20, 4, 10], 5)\n    False\n    \"\"\"\n    for element in l:\n        if element >= t:\n            return False\n\n    return True"}
+{"task_id": "HumanEval/53", "completion": ""}
+{"task_id": "HumanEval/54", "completion": ""}
+{"task_id": "HumanEval/55", "completion": ""}
+{"task_id": "HumanEval/56", "completion": ""}
+{"task_id": "HumanEval/57", "completion": "\"\"\""}
+{"task_id": "HumanEval/58", "completion": "\"\"\"\n\nl1 = [5, 3, 2, 8]\nl2 = [3, 2]\n\n\ndef common(l1, l2):\n    return sorted(set(l1).intersection(l2))\n\n\nprint(common(l1, l2))"}
+{"task_id": "HumanEval/59", "completion": ""}
+{"task_id": "HumanEval/60", "completion": ""}
+{"task_id": "HumanEval/61", "completion": ""}
+{"task_id": "HumanEval/62", "completion": "\"\"\""}
+{"task_id": "HumanEval/63", "completion": ""}
+{"task_id": "HumanEval/64", "completion": "\"\"\""}
+{"task_id": "HumanEval/65", "completion": "\"\"\"\n\nimport json\n\n\ndef main():\n    with open(\"input.json\", \"r\") as f:\n        content = json.load(f)\n\n    text = content[\"problem\"]\n\n    # print(text)\n\n    # split lines to get a list of all words\n    words = [line for line in text.split('\\n') if len(line) > 0]\n    # print(words)\n\n    # create the function body\n    function_body = [\"def circular_shift(x, shift):\"]\n    # loop through each word\n    for i in range(len(words)):\n        word = words[i].replace(\" \", \"\")\n\n        if word == \">>>\":\n            function_body.append(\"\\t# Testing\")\n            continue\n        else:\n            # append the line to the function body\n            function_body.append(\"\\t{}\".format(word))\n\n    # join all lines\n    function_code = '\\n'.join(function_body)\n\n    # print(function_code)\n\n    # create JSON object to output\n    json_output = {\n        \"problem\": content[\"problem\"],\n        \"code\": function_code\n    }\n\n    # write to a file\n    with open(\"output.json\", \"w\") as f:\n        json.dump(json_output, f)\n\n\nif __name__ == \"__main__\":\n    main()"}
+{"task_id": "HumanEval/66", "completion": "\"\"\"\n        digitSum(\"\") => 0\n        digitSum(\"abAB\") => 131\n        digitSum(\"abcCd\") => 67\n        digitSum(\"helloE\") => 69\n        digitSum(\"woArBld\") => 131\n        digitSum(\"aAaaaXa\") => 153\n    \"\"\"\n\n\"\"\""}
+{"task_id": "HumanEval/67", "completion": ""}
+{"task_id": "HumanEval/68", "completion": ""}
+{"task_id": "HumanEval/69", "completion": ""}
+{"task_id": "HumanEval/70", "completion": ""}
+{"task_id": "HumanEval/71", "completion": ""}
+{"task_id": "HumanEval/72", "completion": "def will_it_fly(q,w):\n    pass"}
+{"task_id": "HumanEval/73", "completion": "<|input_as_json|>"}
+{"task_id": "HumanEval/74", "completion": "<|eof|>"}
+{"task_id": "HumanEval/75", "completion": ""}
+{"task_id": "HumanEval/76", "completion": ""}
+{"task_id": "HumanEval/77", "completion": "def iscube(a):\n    \n# Write your code here"}
+{"task_id": "HumanEval/78", "completion": "import pytest\n\n\n@pytest.mark.task034\ndef test_hex_key():\n    assert hex_key(\"\") == 0\n    assert hex_key(\"AB\") == 1\n    assert hex_key(\"1077E\") == 2\n    assert hex_key(\"ABED1A33\") == 4\n    assert hex_key(\"123456789ABCDEF0\") == 6\n    assert hex_key(\"2020\") == 2"}
+{"task_id": "HumanEval/79", "completion": ""}
+{"task_id": "HumanEval/80", "completion": ""}
+{"task_id": "HumanEval/81", "completion": "\"\"\"\n\n# Write your solution here\ndef numerical_letter_grade(grades):\n    return grades"}
+{"task_id": "HumanEval/82", "completion": ""}
+{"task_id": "HumanEval/83", "completion": "def starts_one_ends(n):\n    count = 0\n    \n    if n > 18:\n        num = pow(10, (n - 1)) + 1\n        \n    else: \n        num = 2\n    \n    while num < pow(10, n):\n        if (num % 10) == 1 and ((num // 10) != 1 or (num > 9)):\n            count += 1\n        \n        num += 1\n\n    return count"}
+{"task_id": "HumanEval/84", "completion": "code: \"def solve(N):\\\\n    # insert code here.\\\\n    pass\"\n\n*/"}
+{"task_id": "HumanEval/85", "completion": "Code goes here.\n\n# 1439697897962.py\n'''\n{\"code\": \"def add(lst):\\n    return sum([x for i, x in enumerate(lst) if not i % 2])\\n\"}\n'''"}
+{"task_id": "HumanEval/86", "completion": ""}
+{"task_id": "HumanEval/87", "completion": "\"\"\"\ndef get_row(lst, x):\n    # YOUR CODE GOES HERE\n    pass\n    return []"}
+{"task_id": "HumanEval/88", "completion": "\"\"\""}
+{"task_id": "HumanEval/89", "completion": "<|solution|\"code\", \"encrypt\">\n\n\"\"\"\n\ndef encrypt(s):\n    s = list(s)\n    for i, c in enumerate(s):\n        if ord('a') <= ord(c) and ord(c) <= ord('z'):\n            if ord(c)+2 > ord('z'):\n                s[i] = chr((ord(c)-13))\n            else:\n                s[i] = chr(ord(c) + 2)\n    return ''.join(s)"}
+{"task_id": "HumanEval/90", "completion": ""}
+{"task_id": "HumanEval/91", "completion": "\"\"\"\n\nimport json\nimport sys\nfrom typing import List\n\n\ndef is_bored(S):\n    \"\"\"\n    You'll be given a string of words, and your task is to count the number of boredoms. A boredom is a sentence that starts with the word \"I\". Sentences are delimited by '.', '?' or '!'.\n   \n    For example:\n     >>> is_bored(\"Hello world\")\n     0\n     >>> is_bored(\"The sky is blue. The sun is shining. I love this weather\")\n     1\n    \"\"\"\n\n\nif __name__ == \"__main__\":\n    json_data = json.loads(sys.stdin.read())\n    for testcase in json_data[\"testcases\"]:\n        assert len(testcase) == 2, \"Test case should contain two items.\"\n        input = testcase[0]\n        expected = testcase[1]\n\n        actual = is_bored(input)\n        print(\"Expected: \", expected, file=sys.stderr)\n        print(\"Actual:\", actual, file=sys.stderr)\n\n        assert actual == expected\n\n    print(\"{ \\\"code\\\": \" + json.dumps(\n        is_bored.__doc__) + \"} \", end=\"\")"}
+{"task_id": "HumanEval/92", "completion": "'''"}
+{"task_id": "HumanEval/93", "completion": ""}
+{"task_id": "HumanEval/94", "completion": "\"\"\"\n\n\n# This code has not been formally tested and is likely to contain errors\n\ndef skjkasdkd(lst):\n    # TODO: fill out this function\n    return 0"}
+{"task_id": "HumanEval/95", "completion": ""}
+{"task_id": "HumanEval/96", "completion": "\"\"\"\n\nclass Solution:\n    def count_up_to(self, n):\n        # TODO(student): Write your solution here.\n\n\n# TODO(student): Don't change this code. Use it to test your solution.\ndef run_test(test_case: List[int], expected: Optional[List[int]],\n              actual: List[int]) -> Tuple[bool, str]:\n    if not isinstance(actual, list) or len(actual) != len(expected):\n        return False, 'output is not a list'\n\n    for i in range(len(expected)):\n        if expected[i] != actual[i]:\n            return False, f'{i}-th elements do not match: {expected} != {actual}'\n\n    return True, 'Test case passed!'\n\n\ndef main():\n    solution = Solution()\n\n    assert run_test([5], [2, 3], solution.count_up_to(5)) == (True, '')\n    assert run_test([11], [2, 3, 5, 7], solution.count_up_to(11)) == (True, '')\n    assert run_test([0], [], solution.count_up_to(0)) == (True, '')\n    assert run_test([20],\n                    [2, 3, 5, 7, 11, 13, 17, 19], solution.count_up_to(20)) \\\n           == (True, '')\n\n    # TODO(student): Add more test cases here if you want to\n    pass\n\n\nif __name__ == '__main__':\n    main()"}
+{"task_id": "HumanEval/97", "completion": ""}
+{"task_id": "HumanEval/98", "completion": "\"\"\""}
+{"task_id": "HumanEval/99", "completion": ""}
+{"task_id": "HumanEval/100", "completion": ""}
+{"task_id": "HumanEval/101", "completion": "# My code\n[code]\ndef words_string(s):\n    return s.split(', ')\n[code]"}
+{"task_id": "HumanEval/102", "completion": ""}
+{"task_id": "HumanEval/103", "completion": ""}
+{"task_id": "HumanEval/104", "completion": ""}
+{"task_id": "HumanEval/105", "completion": "\"\"\""}
+{"task_id": "HumanEval/106", "completion": "\"\"\"\n\n\ndef f(n):\n    pass"}
+{"task_id": "HumanEval/107", "completion": ""}
+{"task_id": "HumanEval/108", "completion": ""}
+{"task_id": "HumanEval/109", "completion": "\"\"\"\n@param arr: The array of integers.\n@return boolean: True if it is possible to obtain the sorted array by performing \n                 the above operation else False.\n\"\"\"\ndef move_one_ball(arr):\n    return ...\n\n\n\n\n# The following code is a test for your solution. You will not need to change this.\nif __name__ == \"__main__\":\n    tests = [\n        ([3, 4, 5, 1, 2], True),\n        ([3, 5, 4, 1, 2], False)\n    ]\n    failed_test_cases = []\n    for test in tests:\n        result = move_one_ball(test[0])\n        if result != test[1]:\n            print(\"Test case fails.\")\n            failed_test_cases.append(test)\n\n    print()\n    print(\"Done!\")\n    if len(failed_test_cases) == 0:\n        print(\"All tests passed! You are correct!\")\n    else:\n        print(\"The following test cases fail:\")\n        for test in failed_test_cases:\n            print(f\"- [{str(test[1])}]\")"}
+{"task_id": "HumanEval/110", "completion": ""}
+{"task_id": "HumanEval/111", "completion": "\"\"\"\n\n\n# Write your code here"}
+{"task_id": "HumanEval/112", "completion": ""}
+{"task_id": "HumanEval/113", "completion": ""}
+{"task_id": "HumanEval/114", "completion": ""}
+{"task_id": "HumanEval/115", "completion": "\"\"\")"}
+{"task_id": "HumanEval/116", "completion": ""}
+{"task_id": "HumanEval/117", "completion": ""}
+{"task_id": "HumanEval/118", "completion": ""}
+{"task_id": "HumanEval/119", "completion": ""}
+{"task_id": "HumanEval/120", "completion": ""}
+{"task_id": "HumanEval/121", "completion": ""}
+{"task_id": "HumanEval/122", "completion": "<|\ndef add_elements(arr, k):\n    \"\"\"\n    Given a non-empty array of integers arr and an integer k, return\n    the sum of the elements with at most two digits from the first k elements of arr.\n\n    Example:\n\n        Input: arr = [111,21,3,4000,5,6,7,8,9], k = 4\n        Output: 24 # sum of 21 + 3\n\n    Constraints:\n        1. 1 <= len(arr) <= 100\n        2. 1 <= k <= len(arr)\n    \"\"\"\n    raise NotImplementedError\n|>"}
+{"task_id": "HumanEval/123", "completion": ""}
+{"task_id": "HumanEval/124", "completion": ""}
+{"task_id": "HumanEval/125", "completion": ""}
+{"task_id": "HumanEval/126", "completion": ""}
+{"task_id": "HumanEval/127", "completion": ""}
+{"task_id": "HumanEval/128", "completion": ""}
+{"task_id": "HumanEval/129", "completion": ""}
+{"task_id": "HumanEval/130", "completion": ""}
+{"task_id": "HumanEval/131", "completion": ""}
+{"task_id": "HumanEval/132", "completion": ""}
+{"task_id": "HumanEval/133", "completion": ""}
+{"task_id": "HumanEval/134", "completion": "\"\"\"\n\n# Solution goes here"}
+{"task_id": "HumanEval/135", "completion": "\"\"\""}
+{"task_id": "HumanEval/136", "completion": ""}
+{"task_id": "HumanEval/137", "completion": "Solution by: <|username|>\n\n\"\"\"\n\nimport json\n\n# Begin code here.\n\ndef compare_one(a,b):\n    return max((float(a), float(b))) if (isinstance(a, str) or isinstance(b, str)) else None\n\n\nprint(compare_one(\"5\", 10))"}
+{"task_id": "HumanEval/138", "completion": "<|code=|\"def is_equal_to_sum_even(n):\\n    \\\"\\\"\\\"\\n    Evaluate whether the given number n can be written as the sum of exactly 4 positive even numbers\\n    Example\\n    is_equal_to_sum_even(4) == False\\n    is_equal_to_sum_even(6) == False\\n    is_equal_to_sum_even(8) == True\\n    \\\"\\\"\\\"\\n\\ndef is_equal_to_sum_even(n):\\n    return n / 2.0 \\n        |>"}
+{"task_id": "HumanEval/139", "completion": "\"\"\"\n\n\ndef special_factorial(n):\n    \"\"\"The Brazilian factorial is defined as:\n    brazilian_factorial(n) = n! * (n-1)! * (n-2)! * ... * 1!\n    where n > 0\n\n    For example:\n    >>> special_factorial(4)\n    288\n\n    The function will receive an integer as input and should return the special\n    factorial of this integer.\n    \"\"\""}
+{"task_id": "HumanEval/140", "completion": "\"\"\"\n\n# TODO: Put your answer here."}
+{"task_id": "HumanEval/141", "completion": ""}
+{"task_id": "HumanEval/142", "completion": ""}
+{"task_id": "HumanEval/143", "completion": "# Code for testing\nimport json\nimport sys\n\nwith open(\"test.json\", \"r\") as testfile:\n    tests = json.loads(testfile.read())\n\nprint(\"Running tests...\")\nfor i, test in enumerate(tests):\n    sentence = test[\"sentence\"]\n\n    if sentence == \""}
+{"task_id": "HumanEval/144", "completion": ""}
+{"task_id": "HumanEval/145", "completion": ""}
+{"task_id": "HumanEval/146", "completion": ""}
+{"task_id": "HumanEval/147", "completion": "code ="}
+{"task_id": "HumanEval/148", "completion": "'''\nplanet1 = \"Neptune\"\nplanet2 = \"Uranus\"\nprint(bf(planet1, planet2))\n\nplanet1 = \"Earth\"\nplanet2 = \"Mercury\"\nprint(bf(planet1, planet2))"}
+{"task_id": "HumanEval/149", "completion": ""}
+{"task_id": "HumanEval/150", "completion": ""}
+{"task_id": "HumanEval/151", "completion": ""}
+{"task_id": "HumanEval/152", "completion": "\"\"\"\n\nCode:\n<|begin_of_text|>"}
+{"task_id": "HumanEval/153", "completion": "\"\"\""}
+{"task_id": "HumanEval/154", "completion": "You are given 2 words. You need to return True if the second word or any of its rotations is a substring in the first word\n    cycpattern_check(\"abcd\",\"abd\") => False\n    cycpattern_check(\"hello\",\"ell\") => True\n    cycpattern_check(\"whassup\",\"psus\") => False\n    cycpattern_check(\"abab\",\"baa\") => True\n    cycpattern_check(\"efef\",\"eeff\") => False\n    cycpattern_check(\"himenss\",\"simen\") => True"}
+{"task_id": "HumanEval/155", "completion": ""}
+{"task_id": "HumanEval/156", "completion": ""}
+{"task_id": "HumanEval/157", "completion": "\"\"\"\nimport json\n\nprint(\"Here is your answer:\")\n\n\ndef right_angle_triangle(a, b, c):\n    pass\n    \"\"\"\n    if ((a * a) + (b * b)) == (c * c) or ((a * a) + (c * c)) == (b * b) or \\\n            ((b * b) + (c * c)) == (a * a):\n        return True\n    else:\n        return False\n    \"\"\"\n\n\ndef main():\n    print(right_angle_triangle(3, 4, 5))\n\n\nif __name__ == \"__main__\":\n    main()"}
+{"task_id": "HumanEval/158", "completion": ""}
+{"task_id": "HumanEval/159", "completion": ""}
+{"task_id": "HumanEval/160", "completion": ""}
+{"task_id": "HumanEval/161", "completion": "\"\"\"\n\nfrom string import ascii_lowercase\n\n\n# Add your code here:"}
+{"task_id": "HumanEval/162", "completion": "\"\"\""}
+{"task_id": "HumanEval/163", "completion": "<|function_code|>:"}

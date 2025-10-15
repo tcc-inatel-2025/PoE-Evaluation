@@ -23,6 +23,7 @@ services:
   humaneval:
     build: 
       context: . 
+      dockerfile: Dockerfile
     container_name: humaneval_sandbox
     stdin_open: true
     tty: true

@@ -4,6 +4,7 @@ import requests
 import argparse
 from human_eval.data import read_problems  # already in your humaneval project  # pyright: ignore[reportMissingImports]
 import re
+from json_extract import extract_first_json, clean_code
 
 # --- CLI + ENV VARS ---
 parser = argparse.ArgumentParser(description="Generate HumanEval samples from an Ollama model.")
@@ -48,22 +49,20 @@ else:
     OUTPUT_FILE = args.output
 
 PROMPT_TEMPLATE = """
-from typing import List, Tuple, Optional, Any
+Return ONLY a single JSON object with this exact schema:
+{{ "code": "<Python function code here>" }}
 
-You are a Python assistant. Given the problem description below, generate a single Python function that solves it.
+Rules:
+- Do NOT include markdown, backticks, or prose before/after the JSON.
+- The JSON must be the first character of the response and be strictly valid.
+- Put the entire solution in the "code" value.
+- No tests, no prints, no explanations.
 
-Problem description:
+Example:
+{{ "code": "def add(a, b):\n    return a + b" }}
+
+Task:
 {problem_prompt}
-
-Requirements:
-- Only write the Python function, nothing else.
-- Do NOT include explanations, markdown, or print statements.
-- Ensure the code is syntactically correct and ready to run.
-
-IMPORTANT: Output your answer as a single valid JSON object with one key: "code".
-For example: {{ "code": "def add(a, b):\\n    return a + b" }}
-
-Write your function in the "code" field below:
 """
 
 
@@ -100,13 +99,16 @@ def main():
                 print(f"[+] Generating for task {task_id} ...")
                 completion_json = generate_from_ollama(MODEL_NAME, prompt)
                 try:
-                    completion_data = json.loads(completion_json)
-                    completion_code = completion_data.get("code", "").strip()
-                except json.JSONDecodeError:
-                    completion_code = completion_json.strip()
-                
-                completion_code = re.sub(r"^```python\s*|\s*```$", "", completion_code, flags=re.MULTILINE)
-                completion_code = completion_code.strip()
+                    obj = extract_first_json(completion_json)
+                    code_value = obj.get("code") if isinstance(obj, dict) else None
+                    if code_value is None:
+                        code_value = obj.get("completion") if isinstance(obj, dict) else None
+                    if not isinstance(code_value, str):
+                        raise ValueError("No code/completion string in JSON")
+                    completion_code = clean_code(code_value)
+                except Exception:
+                    # Fallback: treat the raw response as code and strip fences
+                    completion_code = clean_code(completion_json)
                 
                 record = {
                     "task_id": task_id,
