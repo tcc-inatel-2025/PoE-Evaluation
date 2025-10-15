@@ -12,24 +12,23 @@ services:
     deploy:
       resources:
         limits:
-          memory: 16G   # <-- increase as needed
+          memory: 16G  # <-- increase as needed
         reservations:
-          memory: 8G
+          memory: 4G
           devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
 
   humaneval:
     build: 
       context: . 
+      dockerfile: Dockerfile
     container_name: humaneval_sandbox
     stdin_open: true
     tty: true
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
     pids_limit: 64
     mem_limit: 256m
     cpus: 1.0
