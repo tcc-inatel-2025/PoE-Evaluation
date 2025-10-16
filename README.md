@@ -59,7 +59,7 @@ O **PoE-Evaluation** é um framework robusto para avaliação multidimensional d
 ```mermaid
 graph TB
     subgraph "Container Ollama"
-        A[Ollama Server<br/>:11434]
+        A[Ollama Server]
         A1[codegema:7b]
         A2[codellama:7b]
         A3[qwen2.5-coder:7b]
