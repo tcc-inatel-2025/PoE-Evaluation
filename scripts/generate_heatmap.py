@@ -1,7 +1,7 @@
 from pathlib import Path
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import pandas as pd  # pyright: ignore[reportMissingImports]
+import matplotlib.pyplot as plt  # pyright: ignore[reportMissingImports]
+import seaborn as sns  # pyright: ignore[reportMissingModuleSource]
 import glob
 
 # Configuration
