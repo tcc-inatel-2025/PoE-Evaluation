@@ -1,0 +1,13 @@
+.git
+.gitignore
+docker-compose.yml
+dockerfile
+GEMINI.md
+LICENSE
+model_evaluation_summary.md
+README.md
+TODO.md
+ollama_models/
+results/
+samples/
+temp/

@@ -36,6 +36,18 @@ def clean_code(s: str) -> str:
     # Remove a trailing " } if present
     s = re.sub(r'"\s*\}\s*$', "", s, count=1, flags=re.DOTALL)
 
+    # Normalize/strip tokenizer artifacts and odd unicode from some model outputs
+    # 1) Remove angle-bracketed special tokens like <|begin_of_sentence|>
+    s = re.sub(r"<[^>]*>", "", s)
+    # 2) Replace SentencePiece underscore U+2581 with a normal space
+    s = s.replace("\u2581", " ")
+    # 3) Normalize fullwidth vertical bar to ASCII and strip zero-width/control chars
+    s = s.replace("\uff5c", "|")
+    s = re.sub(r"[\u200b\u200c\u200d\ufeff]", "", s)
+    # 4) Collapse excessive internal whitespace introduced by cleaning
+    s = re.sub(r"[ \t]+\n", "\n", s)
+    s = re.sub(r"\n{3,}", "\n\n", s)
+
     return s.strip()
 
 

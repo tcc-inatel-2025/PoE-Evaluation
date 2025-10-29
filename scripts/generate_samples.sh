@@ -3,11 +3,9 @@ set -euo pipefail
 
 # List of models to run
 models=(
-    "starcoder2:7b"
     "qwen2.5-coder:7b"
     "codegemma:7b"
     "deepseek-coder:6.7b"
-    "stable-code:3b"
     "codellama:7b"
 )
 
