@@ -13,7 +13,7 @@ from human_eval.evaluation import evaluate_functional_correctness
 from radon.complexity import cc_visit
 from tqdm import tqdm
 from pylint.lint import Run
-from pylint.reporters.text import TextReporter
+from pylint.reporters.json_reporter import JSONReporter
 from io import StringIO
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -158,10 +158,17 @@ def run_pylint_string(code_str, pylint_args=None):
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=True) as tmp:
         tmp.write(code_str)
         tmp.flush()
-        reporter = TextReporter(StringIO())
+        reporter = JSONReporter(StringIO())
         results = Run([tmp.name, *effective_args], do_exit=False, reporter=reporter)
         score = getattr(results.linter.stats, "global_note", None)
-    return float(score) if score is not None else 0.0
+        # Floor None or 0.0 scores to 0.05 (syntax errors are handled earlier)
+        if score is None:
+            final_score = 0.05
+        else:
+            final_score = float(score)
+            if final_score == 0.0:
+                final_score = 0.05
+    return final_score
 
 
 def evaluate_linter(results_file):
