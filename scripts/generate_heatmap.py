@@ -19,7 +19,7 @@ HEATMAP_METRICS = [
     "loc_score",
 ]
 
-sns.set_theme(style="white")
+sns.set_theme(style="white", font_scale=1.6)
 
 def load_summary_files(pattern: str) -> pd.DataFrame:
     """Load all matching CSVs and attach a 'model' column (derived from filename).
@@ -62,20 +62,22 @@ def plot_model_comparison_heatmap(df: pd.DataFrame, output_root: Path):
     print(model_stats)
 
     plt.figure(figsize=(12, 8))
+    cmap = sns.color_palette("Set3", as_cmap=True)
     heatmap = sns.heatmap(
         model_stats,
-        annot=True,       # Display the values in the cells
-        fmt=".3f",        # Format values to three decimal places
-        cmap="viridis",   # Use a color-blind friendly colormap
-        linewidths=.5,
-        linecolor='black'
+        annot=True,
+        fmt=".3f",
+        cmap=cmap,
+        linewidths=0.6,
+        linecolor="white",
+        cbar_kws={"label": "Score"},
     )
     
-    plt.title("Model Performance Comparison Heatmap", fontsize=16, pad=20)
-    plt.xlabel("Evaluation Metrics", fontsize=12)
-    plt.ylabel("Models", fontsize=12)
-    plt.xticks(rotation=45, ha="right")
-    plt.yticks(rotation=0)
+    plt.title("Model Performance Comparison Heatmap", fontsize=16, pad=20, fontweight="semibold")
+    plt.xlabel("Evaluation Metrics", fontsize=13)
+    plt.ylabel("Models", fontsize=13)
+    plt.xticks(rotation=45, ha="right", fontsize=12, fontweight="semibold")
+    plt.yticks(rotation=0, fontsize=14, fontweight="semibold")
 
     # Save the figure
     out_file = output_root / "model_comparison_heatmap.png"
