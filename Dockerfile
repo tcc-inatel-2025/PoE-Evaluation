@@ -17,7 +17,7 @@ RUN apt-get update && \
 RUN pip install --upgrade pip setuptools wheel
 
 # Install normal Python dependencies
-RUN pip install --no-cache-dir requests radon pylint pandas matplotlib seaborn
+RUN pip install --no-cache-dir requests radon pylint pandas matplotlib seaborn scipy
 
 # Clone HumanEval repo and install in editable mode
 RUN git clone https://github.com/openai/human-eval.git /workspace/human-eval && \

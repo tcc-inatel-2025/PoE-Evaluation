@@ -3,7 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import glob
-import os
 import numpy as np
 from scipy.stats import spearmanr
 
@@ -22,14 +21,35 @@ PREFERRED_METRICS = [
     "loc_score",
 ]
 
-sns.set_theme(style="whitegrid")
-plt.rcParams["figure.figsize"] = (10, 5)
+#theme
+sns.set_theme(style="whitegrid", rc={
+    "axes.spines.right": False,
+    "axes.spines.top": False,
+    "figure.figsize": (10, 5.5),
+    "axes.titlesize": 13,
+    "axes.labelsize": 11,
+    "xtick.labelsize": 10,
+    "ytick.labelsize": 10,
+    "legend.fontsize": 10,
+    "grid.alpha": 0.25,
+})
+
+# Beautiful red → green divergent palette (12 steps)
+divergent_cmap = sns.diverging_palette(
+    h_neg=355,   # red
+    h_pos=130,   # green
+    s=90, l=55,
+    sep=10,
+    n=12,
+    center="light"
+)
+
+sns.set_palette(divergent_cmap)
+plt.rcParams['axes.prop_cycle'] = plt.cycler(color=divergent_cmap)
 
 
 def load_summary_files(pattern: str) -> pd.DataFrame:
-    """Load all matching CSVs and attach a 'model' column (derived from filename).
-    Returns a concatenated DataFrame (may be empty).
-    """
+    """Load all matching CSVs and attach a 'model' column (derived from filename)."""
     files = glob.glob(pattern)
     print(f"Found {len(files)} summary files")
     dfs = []
@@ -37,21 +57,15 @@ def load_summary_files(pattern: str) -> pd.DataFrame:
         model_name = Path(f).stem.replace("_summary", "")
         try:
             df_temp = pd.read_csv(f)
+            df_temp["model"] = model_name
+            dfs.append(df_temp)
         except Exception as e:
             print(f"WARNING: failed to read '{f}': {e}")
-            continue
-        df_temp["model"] = model_name
-        dfs.append(df_temp)
-    if not dfs:
-        return pd.DataFrame()
-    return pd.concat(dfs, ignore_index=True)
-
+    return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 
 def sanitize_series(s: pd.Series) -> pd.Series:
     """Attempt to coerce series to numeric and drop NaNs for plotting."""
-    s = pd.to_numeric(s, errors="coerce")
-    return s
-
+    return pd.to_numeric(s, errors="coerce")
 
 def plot_overall_score_distribution(df: pd.DataFrame, output_root: Path):
     """Create box plots and violin plots showing overall_score distribution by model.
@@ -119,300 +133,460 @@ def plot_overall_score_distribution(df: pd.DataFrame, output_root: Path):
     fig.savefig(out_file, dpi=300, bbox_inches="tight")
     plt.close(fig)
     print(f"Saved distribution plots -> {out_file}")
-
+    
 
 def plot_rank_concordance(df: pd.DataFrame, output_root: Path, metrics: list):
-    """Create rank concordance plots comparing overall_score rankings vs other metrics.
-    Shows how well overall_score correlates with individual metrics in terms of model rankings.
-    Saves files to output_root/rank_concordance_plots.png
+    """
+    Create rank concordance plots comparing overall_score rankings vs other metrics.
+    Also generates inter-metric Spearman correlation matrix and heatmap.
     """
     if df.empty:
         print("No data available for rank concordance plots.")
         return
-    
-    # Clean the data
+
     df_clean = df.copy()
     df_clean["overall_score"] = sanitize_series(df_clean["overall_score"])
     df_clean = df_clean.dropna(subset=["overall_score"])
-    
     if df_clean.empty:
         print("No valid overall_score data for rank concordance plots.")
         return
-    
-    # Calculate mean scores per model for ranking
+
+    # Mean per model
     model_stats = df_clean.groupby("model").agg({
         "overall_score": "mean",
-        **{metric: "mean" for metric in metrics if metric in df_clean.columns}
+        **{m: "mean" for m in metrics if m in df_clean.columns}
     }).reset_index()
-    
+
     available_metrics = [m for m in metrics if m in model_stats.columns]
     if not available_metrics:
         print("No available metrics for rank concordance analysis.")
         return
-    
+
     print(f"Creating rank concordance plots for metrics: {available_metrics}")
-    
-    # Calculate number of subplots needed
+
+    # Color map per model
+    models = model_stats["model"].tolist()
+    model_palette = sns.color_palette("Set3", n_colors=len(models))
+    model_color_map = {m: model_palette[i] for i, m in enumerate(models)}
+
+    overall_ranks = model_stats["overall_score"].rank(ascending=False, method="average")
+
+    # === 1. Rank Concordance Plots (individual + combined) ===
     n_metrics = len(available_metrics)
     n_cols = min(3, n_metrics)
     n_rows = (n_metrics + n_cols - 1) // n_cols
-    
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
-    if n_metrics == 1:
-        axes = [axes]
-    elif n_rows == 1:
-        axes = [axes]
-    else:
-        axes = axes.flatten()
-    
+    fig_combined, axes_combined = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 5 * n_rows))
+    axes_combined = np.array(axes_combined).ravel()
+
+    rank_dir = output_root / "rank_concordance"
+    rank_dir.mkdir(parents=True, exist_ok=True)
+
     for i, metric in enumerate(available_metrics):
-        ax = axes[i]
-        
-        # Calculate rankings (1 = best, higher = worse)
-        overall_ranks = model_stats["overall_score"].rank(ascending=False, method="average")
         metric_ranks = model_stats[metric].rank(ascending=False, method="average")
-        
-        # Create scatter plot
-        ax.scatter(overall_ranks, metric_ranks, s=100, alpha=0.7, edgecolors='black', linewidth=1)
-        
-        # Add model labels
-        for _, row in model_stats.iterrows():
-            ax.annotate(row["model"], 
-                       (overall_ranks[row.name], metric_ranks[row.name]),
-                       xytext=(5, 5), textcoords='offset points',
-                       fontsize=8, alpha=0.8)
-        
-        # Add perfect correlation line
-        min_rank = min(overall_ranks.min(), metric_ranks.min())
-        max_rank = max(overall_ranks.max(), metric_ranks.max())
-        ax.plot([min_rank, max_rank], [min_rank, max_rank], 'r--', alpha=0.5, linewidth=2)
-        
-        # Calculate and display Spearman correlation
-        correlation, p_value = spearmanr(overall_ranks, metric_ranks)
-        
-        ax.set_xlabel("Overall Score Rank")
-        ax.set_ylabel(f"{metric} Rank")
-        ax.set_title(f"Rank Concordance: Overall Score vs {metric}\n(Spearman ρ = {correlation:.3f}, p = {p_value:.3f})")
-        ax.grid(True, alpha=0.3)
-        
-        # Set equal axis limits for better comparison
-        ax.set_xlim(min_rank - 0.5, max_rank + 0.5)
-        ax.set_ylim(min_rank - 0.5, max_rank + 0.5)
-    
+
+        # Individual plot
+        fig, ax = plt.subplots(figsize=(7, 6))
+        _plot_rank_concordance_core(ax, model_stats, overall_ranks, metric_ranks, metric, model_color_map)
+        out_file_ind = rank_dir / f"rank_concordance_{metric}.png"
+        fig.savefig(out_file_ind, dpi=300, bbox_inches="tight")
+        plt.close(fig)
+        print(f"   Saved: {out_file_ind.name}")
+
+        # Combined subplot
+        axc = axes_combined[i]
+        _plot_rank_concordance_core(axc, model_stats, overall_ranks, metric_ranks, metric, model_color_map)
+        axc.set_title(metric.replace("_", " ").title(), fontsize=11, pad=10)
+
     # Hide unused subplots
-    for i in range(n_metrics, len(axes)):
-        axes[i].set_visible(False)
-    
+    for j in range(i + 1, len(axes_combined)):
+        axes_combined[j].set_visible(False)
+
     plt.tight_layout()
+    combined_path = output_root / "rank_concordance_plots.png"
+    fig_combined.savefig(combined_path, dpi=300, bbox_inches="tight")
+    plt.close(fig_combined)
+    print(f"   Saved combined: {combined_path.name}")
+
+    # === 2. NEW: Inter-metric Spearman Correlation Heatmap ===
+    print("   Generating inter-metric Spearman correlation matrix...")
     
-    # Save the figure
-    out_file = output_root / "rank_concordance_plots.png"
-    fig.savefig(out_file, dpi=300, bbox_inches="tight")
-    plt.close(fig)
-    print(f"Saved rank concordance plots -> {out_file}")
+    corr_data = model_stats[available_metrics]
+    spearman_matrix = corr_data.corr(method='spearman')
+
+    plt.figure(figsize=(max(7, len(available_metrics) * 0.95), max(6, len(available_metrics) * 0.85)))
+    mask = np.triu(np.ones_like(spearman_matrix, dtype=bool), k=1)
+
+    sns.heatmap(spearman_matrix,
+                annot=True,
+                fmt=".3f",
+                cmap="coolwarm",
+                center=0,
+                vmin=-1, vmax=1,
+                square=True,
+                linewidths=0.7,
+                linecolor='gray',
+                cbar_kws={"shrink": 0.8},
+                mask=mask,
+                annot_kws={"size": 10, "weight": "bold"})
+
+    plt.title("Spearman Rank Correlation Between Individual Metrics", 
+              fontsize=14, fontweight="bold", pad=20)
+    plt.xticks(rotation=45, ha="right")
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+
+    heatmap_path = rank_dir / "inter_metric_spearman_correlation.png"
+    plt.savefig(heatmap_path, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"   Saved correlation heatmap → {heatmap_path.name}")
+
+    # Save CSV tables (perfect for appendix)
+    csv_path = rank_dir / "inter_metric_spearman_correlation.csv"
+    spearman_matrix.round(4).to_csv(csv_path)
+    print(f"   Saved correlation table → {csv_path.name}")
+
+    # Optional: p-values
+    _, pval = spearmanr(corr_data)
+    pval_df = pd.DataFrame(pval, index=available_metrics, columns=available_metrics)
+    pval_csv = rank_dir / "inter_metric_spearman_pvalues.csv"
+    pval_df.round(4).to_csv(pval_csv)
+    print(f"   Saved p-values → {pval_csv.name}")
+
+    print("All rank concordance + inter-metric correlation analysis complete!\n")
+
+
+def _plot_rank_concordance_core(ax, model_stats, overall_ranks, metric_ranks, metric, model_color_map):
+    """Core plotting routine for a rank concordance axis."""
+    xs = overall_ranks.values
+    ys = metric_ranks.values
+    colors = [model_color_map[m] for m in model_stats["model"]]
+    ax.scatter(xs, ys, s=90, alpha=0.9, edgecolors="black", linewidth=0.6, c=colors)
+
+    for idx, row in model_stats.iterrows():
+        ax.annotate(row["model"], (xs[idx], ys[idx]),
+                    xytext=(6, 4), textcoords="offset points",
+                    fontsize=8, alpha=0.85)
+
+    min_rank = min(xs.min(), ys.min())
+    max_rank = max(xs.max(), ys.max())
+    ax.plot([min_rank, max_rank], [min_rank, max_rank], "r--", alpha=0.35, linewidth=1.5)
+
+    corr, p_val = spearmanr(xs, ys)
+    ax.set_xlabel("Overall Score Rank", fontsize=10)
+    ax.set_ylabel(f"{metric.replace('_', ' ').title()} Rank", fontsize=10)
+    ax.set_title(f"Overall vs {metric.replace('_', ' ').title()}\nρ = {corr:.3f} (p = {p_val:.3f})",
+                 fontsize=11, fontweight="semibold")
+    ax.grid(True, alpha=0.25, linestyle="--")
+    ax.set_xlim(min_rank - 0.5, max_rank + 0.5)
+    ax.set_ylim(min_rank - 0.5, max_rank + 0.5)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_facecolor("#fbfbfb")
 
 
 def plot_delta_improvement(df: pd.DataFrame, output_root: Path, metrics: list):
-    """Create delta/improvement plots showing nuances captured by overall_score vs other metrics.
-    Shows where overall_score provides different insights compared to individual metrics.
-    Saves files to output_root/delta_improvement_plots.png
+    """
+    Create delta/improvement plots showing where overall_score differs from each metric.
+    Saves one file per metric and a combined figure.
     """
     if df.empty:
         print("No data available for delta improvement plots.")
         return
-    
-    # Clean the data
+
     df_clean = df.copy()
     df_clean["overall_score"] = sanitize_series(df_clean["overall_score"])
     df_clean = df_clean.dropna(subset=["overall_score"])
-    
     if df_clean.empty:
         print("No valid overall_score data for delta improvement plots.")
         return
-    
-    # Calculate mean scores per model
+
     model_stats = df_clean.groupby("model").agg({
         "overall_score": "mean",
-        **{metric: "mean" for metric in metrics if metric in df_clean.columns}
+        **{m: "mean" for m in metrics if m in df_clean.columns}
     }).reset_index()
-    
+
     available_metrics = [m for m in metrics if m in model_stats.columns]
     if not available_metrics:
         print("No available metrics for delta improvement analysis.")
         return
-    
+
     print(f"Creating delta improvement plots for metrics: {available_metrics}")
-    
-    # Normalize scores to 0-1 scale for fair comparison
+
+    # Color palette per model
+    models = model_stats["model"].tolist()
+    model_palette = sns.color_palette("Set3", n_colors=len(models))
+    model_color_map = {m: model_palette[i] for i, m in enumerate(models)}
+
+    # Normalize scores (0-1) per column to keep comparisons fair
+    def _normalize_series(s):
+        if s.max() > s.min():
+            return (s - s.min()) / (s.max() - s.min())
+        return s - s.min()
+
     model_stats_norm = model_stats.copy()
-    model_stats_norm["overall_score"] = (model_stats_norm["overall_score"] - model_stats_norm["overall_score"].min()) / (model_stats_norm["overall_score"].max() - model_stats_norm["overall_score"].min())
-    
-    for metric in available_metrics:
-        if metric in model_stats_norm.columns:
-            min_val = model_stats_norm[metric].min()
-            max_val = model_stats_norm[metric].max()
-            if max_val > min_val:  # Avoid division by zero
-                model_stats_norm[metric] = (model_stats_norm[metric] - min_val) / (max_val - min_val)
-    
-    # Calculate number of subplots needed
+    model_stats_norm["overall_score"] = _normalize_series(model_stats_norm["overall_score"])
+    for m in available_metrics:
+        model_stats_norm[m] = _normalize_series(model_stats_norm[m])
+
+    # Combined figure setup
     n_metrics = len(available_metrics)
     n_cols = min(2, n_metrics)
     n_rows = (n_metrics + n_cols - 1) // n_cols
-    
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 4 * n_rows))
-    if n_metrics == 1:
-        axes = [axes]
-    elif n_rows == 1:
-        axes = [axes]
-    else:
-        axes = axes.flatten()
-    
+    fig_combined, axes_combined = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 4 * n_rows))
+    axes_combined = np.array(axes_combined).reshape(-1)
+
     for i, metric in enumerate(available_metrics):
-        ax = axes[i]
-        
-        # Calculate deltas (overall_score - metric_score)
-        deltas = model_stats_norm["overall_score"] - model_stats_norm[metric]
-        
-        # Create bar plot of deltas
-        bars = ax.bar(range(len(model_stats)), deltas, 
-                     color=['green' if d > 0 else 'red' for d in deltas], 
-                     alpha=0.7, edgecolor='black', linewidth=0.5)
-        
-        # Add value labels on bars
-        for j, (bar, delta) in enumerate(zip(bars, deltas)):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height + (0.01 if height >= 0 else -0.01),
-                   f'{delta:.3f}', ha='center', va='bottom' if height >= 0 else 'top',
-                   fontsize=8, fontweight='bold')
-        
-        ax.set_xlabel("Models")
-        ax.set_ylabel("Delta (Overall Score - " + metric + ")")
-        ax.set_title(f"Delta Analysis: Overall Score vs {metric}\n(Green: Overall better, Red: Metric better)")
-        ax.set_xticks(range(len(model_stats)))
-        ax.set_xticklabels(model_stats["model"], rotation=45, ha='right')
-        ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
-        ax.grid(True, alpha=0.3, axis='y')
-        
-        # Add summary statistics
-        positive_deltas = deltas[deltas > 0].count()
-        negative_deltas = deltas[deltas < 0].count()
-        mean_delta = deltas.mean()
-        
-        ax.text(0.02, 0.98, f'Positive deltas: {positive_deltas}/{len(deltas)}\nMean delta: {mean_delta:.3f}', 
-                transform=ax.transAxes, verticalalignment='top',
-                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
-    
-    # Hide unused subplots
-    for i in range(n_metrics, len(axes)):
-        axes[i].set_visible(False)
-    
+        # Individual
+        fig, ax = plt.subplots(figsize=(7, 5))
+        _plot_delta_core(ax, model_stats_norm, metric, model_color_map)
+        rank_dir = output_root / "delta_improvement" 
+        rank_dir.mkdir(parents=True, exist_ok=True)
+        out_file_ind = rank_dir / f"delta_improvement_{metric}.png"
+        fig.savefig(out_file_ind, dpi=300, bbox_inches="tight")
+        plt.close(fig)
+        print(f"Saved delta improvement plot -> {out_file_ind}")
+
+        # Combined
+        _plot_delta_core(axes_combined[i], model_stats_norm, metric, model_color_map)
+
+    # Hide extra combined axes
+    for j in range(len(available_metrics), len(axes_combined)):
+        axes_combined[j].set_visible(False)
+
     plt.tight_layout()
+    out_file_comb = output_root / "delta_improvement_plots.png"
+    fig_combined.savefig(out_file_comb, dpi=300, bbox_inches="tight")
+    plt.close(fig_combined)
+    print(f"Saved combined delta improvement plots -> {out_file_comb}")
+
+
+def _plot_delta_core(ax, model_stats_norm, metric, model_color_map):
+    """Core plotting for delta bars for a given metric on axis ax."""
+    models = model_stats_norm["model"].tolist()
+    deltas = (model_stats_norm["overall_score"] - model_stats_norm[metric]).values
+
+    # Colors: use green/red but keep alpha consistent; we still have palette for marker consistency
+    # Use Set3 palette colors for consistency (greenish/red tones)
+    palette = sns.color_palette("Set3")
+    positive_color = palette[1]  # green pastel
+    negative_color = palette[0]  # red pastel
     
-    # Save the figure
-    out_file = output_root / "delta_improvement_plots.png"
-    fig.savefig(out_file, dpi=300, bbox_inches="tight")
-    plt.close(fig)
-    print(f"Saved delta improvement plots -> {out_file}")
+    bar_colors = [positive_color if d > 0 else negative_color for d in deltas] 
+    bars = ax.bar(models, deltas, color=bar_colors, alpha=0.85, edgecolor="black", linewidth=0.4)
+
+    # Value labels
+    for bar, delta in zip(bars, deltas):
+        h = bar.get_height()
+        y_offset = 0.01 if h >= 0 else -0.01
+        va = "bottom" if h >= 0 else "top"
+        ax.text(bar.get_x() + bar.get_width() / 2, h + y_offset, f"{delta:.3f}",
+                ha="center", va=va, fontsize=8, fontweight="semibold")
+
+    ax.axhline(0, color="black", linewidth=0.7)
+    ax.set_title(f"Δ Improvement: Overall vs {metric}", fontsize=11, fontweight="semibold")
+    ax.set_ylabel("Δ (Overall - Metric)")
+    ax.set_xticklabels(models, rotation=45, ha="right")
+    mean_delta = deltas.mean()
+    positives = (deltas > 0).sum()
+    ax.text(0.02, 0.98, f"Mean Δ: {mean_delta:.3f}\nPositive: {positives}/{len(deltas)}",
+            transform=ax.transAxes, va="top", fontsize=9,
+            bbox=dict(boxstyle="round", facecolor="white", alpha=0.8))
+    ax.grid(True, alpha=0.25, axis="y")
+    ax.set_facecolor("#fbfbfb")
 
 
 def plot_per_model_scatter(df: pd.DataFrame, output_root: Path, metrics: list):
-    """For each unique model in df, create a multi-row scatter plot of overall_score vs each available metric.
-    Saves files to output_root/<model>/scatter_overall_vs_metrics.png
+    """
+    Memory-efficient version: processes one model at a time and aggressively frees memory.
     """
     if df.empty:
-        print("No data available to plot.")
+        print("No data available to plot per-model scatter.")
         return
 
-    models = df["model"].unique()
-    print(f"Generating plots for models: {models}")
+    models = sorted(df["model"].unique())
+    print(f"Generating per-model scatter plots for {len(models)} models...")
 
-    for model in models:
+    for idx, model in enumerate(models, 1):
+        print(f"  [{idx}/{len(models)}] Processing model: {model}", end="")
+
         df_model = df[df["model"] == model].copy()
         if df_model.empty:
-            print(f"Skipping empty model: {model}")
+            print(" -> skipped (empty)")
             continue
 
-        # Check available metrics for this model
         available_metrics = [m for m in metrics if m in df_model.columns]
-        # Also ensure overall_score exists
-        if "overall_score" not in df_model.columns:
-            print(f"Skipping model '{model}': 'overall_score' column missing")
+        if "overall_score" not in df_model.columns or not available_metrics:
+            print(" -> skipped (missing columns)")
             continue
 
-        if not available_metrics:
-            print(f"Skipping model '{model}': none of the preferred metrics found in columns: {df_model.columns.tolist()}")
-            continue
-
-        # sanitize
         df_model["overall_score"] = sanitize_series(df_model["overall_score"])
-        # drop rows where overall_score is NaN
-        df_model = df_model.dropna(subset=["overall_score"]) 
+        df_model = df_model.dropna(subset=["overall_score"])
         if df_model.empty:
-            print(f"Skipping model '{model}': all overall_score values are NaN after coercion")
+            print(" -> skipped (no valid scores)")
             continue
 
-        num_metrics = len(available_metrics)
-        # Create a vertical grid of scatterplots (one column)
-        fig, axes = plt.subplots(nrows=num_metrics, ncols=1, figsize=(10, 3 * num_metrics), squeeze=False)
+        n = len(available_metrics)
+        fig, axes = plt.subplots(nrows=n, ncols=1, figsize=(9, 2.7 * n), squeeze=False)
+        fig.suptitle(f"{model} — Overall Score vs Individual Metrics", fontsize=14, y=0.98)
 
+        any_plotted = False
         for i, metric in enumerate(available_metrics):
             ax = axes[i, 0]
-            # Coerce metric to numeric
             series_metric = sanitize_series(df_model[metric])
-            # Align lengths and drop rows where metric is NaN
-            plot_df = pd.DataFrame({"overall_score": df_model["overall_score"], metric: series_metric}).dropna()
+            plot_df = pd.DataFrame({
+                "overall_score": df_model["overall_score"],
+                metric: series_metric
+            }).dropna()
+
             if plot_df.empty:
                 ax.set_visible(False)
                 continue
 
-            # Scatter plot: jitter x slightly if it's discrete, alpha for density
+            any_plotted = True
             x = plot_df[metric].values
             y = plot_df["overall_score"].values
 
-            # If metric is integer-like with few unique values, add jitter on x
-            if np.issubdtype(plot_df[metric].dtype, np.number) and len(np.unique(np.round(x, 6))) < 15:
-                jitter = (np.random.rand(len(x)) - 0.5) * (np.ptp(x) * 0.02 + 1e-6)
+            # Light jitter only if needed
+            if len(np.unique(np.round(x, 5))) < 20:
+                jitter = np.random.uniform(-0.02, 0.02, size=len(x)) * (x.ptp() or 1)
                 x = x + jitter
 
-            ax.scatter(x, y, alpha=0.7, edgecolors='none')
-            ax.set_xlabel(metric)
-            ax.set_ylabel("overall_score")
-            ax.set_title(f"{model}: overall_score vs {metric}")
+            ax.scatter(x, y, alpha=0.65, s=30, edgecolor="none", color=sns.color_palette("Set3")[i % 12])
+            ax.set_xlabel(metric.replace("_", " ").title())
+            ax.set_ylabel("Overall Score")
+            ax.grid(True, alpha=0.25)
 
-            # Add a simple linear trend line if there are enough points
+            # Trend line
             if len(x) >= 3:
                 try:
                     m, b = np.polyfit(x, y, 1)
-                    xs = np.linspace(np.min(x), np.max(x), 100)
-                    ax.plot(xs, m * xs + b, linestyle='--', linewidth=1)
-                except Exception:
-                    # If polyfit fails, silently skip trendline
+                    ax.plot(np.linspace(x.min(), x.max(), 100), m * np.linspace(x.min(), x.max(), 100) + b,
+                            "--", color="red", linewidth=1.2, alpha=0.8)
+                except:
                     pass
 
-        plt.tight_layout()
+        if not any_plotted:
+            plt.close(fig)
+            print(" -> no valid data")
+            continue
 
-        # Save per-model figure
-        model_out_dir = output_root / model
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+
+        model_out_dir = output_root / "per_model_scatters" / model
         model_out_dir.mkdir(parents=True, exist_ok=True)
         out_file = model_out_dir / "scatter_overall_vs_metrics.png"
-        fig.savefig(out_file, dpi=300, bbox_inches="tight")
-        plt.close(fig)
-        print(f"Saved scatter plot for model '{model}' -> {out_file}")
 
+        fig.savefig(out_file, dpi=200, bbox_inches="tight")  # Reduced DPI = huge memory savings
+        plt.close(fig)  # Critical: free memory immediately
+        print(f" -> saved ({len(df_model)} points)")
+
+        # Explicit garbage collection every few models
+        if idx % 5 == 0:
+            import gc
+            gc.collect()
+
+    print("All per-model scatter plots completed safely!")
+
+def plot_metrics_heatmap(df: pd.DataFrame, metrics: list = None, output_dir: Path = OUTPUT_DIR):
+    """
+    Heatmap that inherits the current global divergent palette (red → green).
+    overall_score = always first column.
+    """
+    if df.empty:
+        print("No data to plot heatmap.")
+        return
+
+    if metrics is None:
+        metrics = PREFERRED_METRICS
+
+    # 1. Desired column order – overall_score always first
+    desired_columns = ["overall_score"]
+    for m in metrics:
+        if m != "overall_score" and m in df.columns:
+            desired_columns.append(m)
+
+    available_cols = [c for c in desired_columns if c in df.columns]
+    if not available_cols:
+        print("None of the requested metrics found.")
+        return
+
+    # 2. One row per model (mean if multiple runs)
+    heatmap_data = df.pivot_table(
+        index="model",
+        values=available_cols,
+        aggfunc="mean"
+    )[available_cols]  # enforce order
+
+    # Sort models by overall_score descending
+    if "overall_score" in heatmap_data.columns:
+        heatmap_data = heatmap_data.sort_values(by="overall_score", ascending=False)
+
+    # 3. Normalize 0–1 (invert low-is-better metrics)
+    normalized = heatmap_data.copy()
+    for col in normalized.columns:
+        mn, mx = normalized[col].min(), normalized[col].max()
+        if mx == mn:
+            normalized[col] = 0.5
+            continue
+        if "cyclomatic_complexity" in col.lower() or col == "loc_score":
+            normalized[col] = (mx - normalized[col]) / (mx - mn)   # lower → better
+        else:
+            normalized[col] = (normalized[col] - mn) / (mx - mn)
+
+    # 4. Colormap – reuse the global divergent palette as a continuous cmap
+    try:
+        # `divergent_cmap` is the global 12-color red→green palette defined at the top.
+        cmap = sns.color_palette(divergent_cmap, as_cmap=True)
+    except Exception:
+        # Very safe fallback if something goes wrong
+        cmap = "RdYlGn"
+
+    # 5. Plot
+    plt.figure(figsize=(len(available_cols) * 1.3 + 2, max(4.5, len(heatmap_data) * 0.65)))
+
+    ax = sns.heatmap(
+        normalized,
+        annot=heatmap_data.round(3),
+        fmt="",
+        cmap=cmap,
+        center=0.5,
+        linewidths=1,
+        linecolor="white",
+        cbar_kws={"shrink": 0.8, "label": "Normalized Performance (0 = worst → 1 = best)"},
+        annot_kws={"size": 10.5, "weight": "bold"}
+    )
+
+    # Pretty labels
+    label_mapping = {
+        "overall_score": "Overall Score",
+        "functional_correctness": "Func. Correctness",
+        "efficiency_score": "Efficiency",
+        "avg_cyclomatic_complexity": "Avg Cyclomatic",
+        "max_cyclomatic_complexity": "Max Cyclomatic",
+        "style_score": "Code Style",
+        "loc_score": "LOC Score",
+    }
+    pretty = [label_mapping.get(c, c.replace("_", " ").title()) for c in available_cols]
+    ax.set_xticklabels(pretty, rotation=45, ha="right")
+
+    plt.title("Model Performance Heatmap\n(Green = Best | Red = Worst | Overall Score = Leftmost)",
+              fontsize=15, fontweight="bold", pad=25)
+    plt.ylabel("Model", fontsize=12)
+    plt.xlabel("")
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+
+    out_path = output_dir / "model_metrics_heatmap.png"
+    plt.savefig(out_path, dpi=300, bbox_inches="tight")
+    print(f"Heatmap saved → {out_path}")
+    plt.close()
 
 if __name__ == "__main__":
     df_all = load_summary_files(SUMMARY_GLOB)
-    
-    # Create distribution plots (box plots and violin plots)
+
     plot_overall_score_distribution(df_all, OUTPUT_DIR)
-    
-    # Create rank concordance plots
     plot_rank_concordance(df_all, OUTPUT_DIR, PREFERRED_METRICS)
-    
-    # Create delta improvement plots
     plot_delta_improvement(df_all, OUTPUT_DIR, PREFERRED_METRICS)
-    
-    # Create per-model scatter plots
     plot_per_model_scatter(df_all, OUTPUT_DIR, PREFERRED_METRICS)
-    
-    print("Done.")
+    plot_metrics_heatmap(df_all, PREFERRED_METRICS, OUTPUT_DIR)
+
+    print("All plots generated successfully!")

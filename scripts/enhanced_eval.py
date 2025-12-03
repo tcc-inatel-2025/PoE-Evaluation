@@ -7,11 +7,14 @@ import gzip
 import tempfile
 import os
 import glob
+import ast
 from human_eval.data import HUMAN_EVAL
 from human_eval.evaluation import evaluate_functional_correctness
 from radon.complexity import cc_visit
 from tqdm import tqdm
 from pylint.lint import Run
+from pylint.reporters.json_reporter import JSONReporter
+from io import StringIO
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -130,14 +133,42 @@ def evaluate_cyclomatic_complexity(results_file):
     return results_file
 
 
-def run_pylint_string(code_str):
-    """Run pylint on a code string and return score (0-10)"""
+def run_pylint_string(code_str, pylint_args=None):
+    """Run pylint on a code string and return score (0-10).
+
+    - Pre-parse with AST; on syntax error returns 0.0 quickly.
+    - Suppresses reporter output for speed/clean logs.
+    - Applies lightweight defaults suitable for code snippets.
+    """
+    # Quick reject on syntax errors
+    try:
+        ast.parse(code_str)
+    except Exception:
+        return 0.0
+
+    default_args = [
+        "--score=y",
+        "--reports=n",
+        "--persistent=n",
+        # Disable checks that are noisy for isolated snippets without project context
+        "--disable=import-error,missing-module-docstring,missing-function-docstring,locally-disabled",
+    ]
+    effective_args = list(pylint_args) if pylint_args else default_args
+
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=True) as tmp:
         tmp.write(code_str)
         tmp.flush()
-        results = Run([tmp.name], do_exit=False)
-        score = results.linter.stats.global_note  # pylint score out of 10
-    return score
+        reporter = JSONReporter(StringIO())
+        results = Run([tmp.name, *effective_args], do_exit=False, reporter=reporter)
+        score = getattr(results.linter.stats, "global_note", None)
+        # Floor None or 0.0 scores to 0.05 (syntax errors are handled earlier)
+        if score is None:
+            final_score = 0.05
+        else:
+            final_score = float(score)
+            if final_score == 0.0:
+                final_score = 0.05
+    return final_score
 
 
 def evaluate_linter(results_file):

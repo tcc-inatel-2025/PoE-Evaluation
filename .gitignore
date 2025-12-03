@@ -1,6 +1,7 @@
 #Models
 ollama_models
 human-eval
+GEMINI.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
