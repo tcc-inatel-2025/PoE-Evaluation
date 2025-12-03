@@ -22,7 +22,7 @@ PREFERRED_METRICS = [
 ]
 
 # Theme
-sns.set_theme(style="whitegrid", palette="Set3", font_scale=3, font="sans-serif", rc={
+sns.set_theme(style="whitegrid", palette="Set3", font_scale=1.3, font="sans-serif", rc={
     "figure.figsize": (10, 5),
     "axes.titlesize": 11,
     "axes.labelsize": 10,
@@ -33,9 +33,7 @@ sns.set_theme(style="whitegrid", palette="Set3", font_scale=3, font="sans-serif"
 
 
 def load_summary_files(pattern: str) -> pd.DataFrame:
-    """Load all matching CSVs and attach a 'model' column (derived from filename).
-    Returns a concatenated DataFrame (may be empty).
-    """
+    """Load all matching CSVs and attach a 'model' column (derived from filename)."""
     files = glob.glob(pattern)
     print(f"Found {len(files)} summary files")
     dfs = []
@@ -49,12 +47,9 @@ def load_summary_files(pattern: str) -> pd.DataFrame:
             print(f"WARNING: failed to read '{f}': {e}")
     return pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 
-
 def sanitize_series(s: pd.Series) -> pd.Series:
     """Attempt to coerce series to numeric and drop NaNs for plotting."""
-    s = pd.to_numeric(s, errors="coerce")
-    return s
-
+    return pd.to_numeric(s, errors="coerce")
 
 def plot_overall_score_distribution(df: pd.DataFrame, output_root: Path):
     """Create box plots and violin plots showing overall_score distribution by model.
@@ -127,7 +122,7 @@ def plot_overall_score_distribution(df: pd.DataFrame, output_root: Path):
 def plot_rank_concordance(df: pd.DataFrame, output_root: Path, metrics: list):
     """
     Create rank concordance plots comparing overall_score rankings vs other metrics.
-    Saves one file per metric and also a combined file with all metrics.
+    Also generates inter-metric Spearman correlation matrix and heatmap.
     """
     if df.empty:
         print("No data available for rank concordance plots.")
@@ -153,74 +148,118 @@ def plot_rank_concordance(df: pd.DataFrame, output_root: Path, metrics: list):
 
     print(f"Creating rank concordance plots for metrics: {available_metrics}")
 
-    # Prepare colors: one color per model (consistent across plots)
+    # Color map per model
     models = model_stats["model"].tolist()
     model_palette = sns.color_palette("Set3", n_colors=len(models))
     model_color_map = {m: model_palette[i] for i, m in enumerate(models)}
 
     overall_ranks = model_stats["overall_score"].rank(ascending=False, method="average")
 
-    # Combined figure setup
+    # === 1. Rank Concordance Plots (individual + combined) ===
     n_metrics = len(available_metrics)
     n_cols = min(3, n_metrics)
     n_rows = (n_metrics + n_cols - 1) // n_cols
-    fig_combined, axes_combined = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 4 * n_rows))
-    axes_combined = np.array(axes_combined).reshape(-1)
+    fig_combined, axes_combined = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 5 * n_rows))
+    axes_combined = np.array(axes_combined).ravel()
+
+    rank_dir = output_root / "rank_concordance"
+    rank_dir.mkdir(parents=True, exist_ok=True)
 
     for i, metric in enumerate(available_metrics):
         metric_ranks = model_stats[metric].rank(ascending=False, method="average")
 
-        # Individual figure
-        fig, ax = plt.subplots(figsize=(6, 5))
+        # Individual plot
+        fig, ax = plt.subplots(figsize=(7, 6))
         _plot_rank_concordance_core(ax, model_stats, overall_ranks, metric_ranks, metric, model_color_map)
-        rank_dir = output_root / "rank_concordance" 
-        rank_dir.mkdir(parents=True, exist_ok=True)
         out_file_ind = rank_dir / f"rank_concordance_{metric}.png"
         fig.savefig(out_file_ind, dpi=300, bbox_inches="tight")
         plt.close(fig)
-        print(f"Saved rank concordance plot -> {out_file_ind}")
+        print(f"   Saved: {out_file_ind.name}")
 
-        # Populate combined subplot
+        # Combined subplot
         axc = axes_combined[i]
         _plot_rank_concordance_core(axc, model_stats, overall_ranks, metric_ranks, metric, model_color_map)
+        axc.set_title(metric.replace("_", " ").title(), fontsize=11, pad=10)
 
-    # Hide remaining axes in combined
-    for j in range(len(available_metrics), len(axes_combined)):
+    # Hide unused subplots
+    for j in range(i + 1, len(axes_combined)):
         axes_combined[j].set_visible(False)
 
     plt.tight_layout()
-    out_file_comb = output_root / "rank_concordance_plots.png"
-    fig_combined.savefig(out_file_comb, dpi=300, bbox_inches="tight")
+    combined_path = output_root / "rank_concordance_plots.png"
+    fig_combined.savefig(combined_path, dpi=300, bbox_inches="tight")
     plt.close(fig_combined)
-    print(f"Saved combined rank concordance plots -> {out_file_comb}")
+    print(f"   Saved combined: {combined_path.name}")
+
+    # === 2. NEW: Inter-metric Spearman Correlation Heatmap ===
+    print("   Generating inter-metric Spearman correlation matrix...")
+    
+    corr_data = model_stats[available_metrics]
+    spearman_matrix = corr_data.corr(method='spearman')
+
+    plt.figure(figsize=(max(7, len(available_metrics) * 0.95), max(6, len(available_metrics) * 0.85)))
+    mask = np.triu(np.ones_like(spearman_matrix, dtype=bool), k=1)
+
+    sns.heatmap(spearman_matrix,
+                annot=True,
+                fmt=".3f",
+                cmap="coolwarm",
+                center=0,
+                vmin=-1, vmax=1,
+                square=True,
+                linewidths=0.7,
+                linecolor='gray',
+                cbar_kws={"shrink": 0.8},
+                mask=mask,
+                annot_kws={"size": 10, "weight": "bold"})
+
+    plt.title("Spearman Rank Correlation Between Individual Metrics", 
+              fontsize=14, fontweight="bold", pad=20)
+    plt.xticks(rotation=45, ha="right")
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+
+    heatmap_path = rank_dir / "inter_metric_spearman_correlation.png"
+    plt.savefig(heatmap_path, dpi=300, bbox_inches="tight")
+    plt.close()
+    print(f"   Saved correlation heatmap → {heatmap_path.name}")
+
+    # Save CSV tables (perfect for appendix)
+    csv_path = rank_dir / "inter_metric_spearman_correlation.csv"
+    spearman_matrix.round(4).to_csv(csv_path)
+    print(f"   Saved correlation table → {csv_path.name}")
+
+    # Optional: p-values
+    _, pval = spearmanr(corr_data)
+    pval_df = pd.DataFrame(pval, index=available_metrics, columns=available_metrics)
+    pval_csv = rank_dir / "inter_metric_spearman_pvalues.csv"
+    pval_df.round(4).to_csv(pval_csv)
+    print(f"   Saved p-values → {pval_csv.name}")
+
+    print("All rank concordance + inter-metric correlation analysis complete!\n")
 
 
 def _plot_rank_concordance_core(ax, model_stats, overall_ranks, metric_ranks, metric, model_color_map):
     """Core plotting routine for a rank concordance axis."""
-    # Scatter with model-specific colors
     xs = overall_ranks.values
     ys = metric_ranks.values
     colors = [model_color_map[m] for m in model_stats["model"]]
     ax.scatter(xs, ys, s=90, alpha=0.9, edgecolors="black", linewidth=0.6, c=colors)
 
-    # Annotate each point with model name
     for idx, row in model_stats.iterrows():
         ax.annotate(row["model"], (xs[idx], ys[idx]),
                     xytext=(6, 4), textcoords="offset points",
                     fontsize=8, alpha=0.85)
 
-    # Perfect correlation line
     min_rank = min(xs.min(), ys.min())
     max_rank = max(xs.max(), ys.max())
     ax.plot([min_rank, max_rank], [min_rank, max_rank], "r--", alpha=0.35, linewidth=1.5)
 
-    # Spearman
     corr, p_val = spearmanr(xs, ys)
-
-    # Formatting
     ax.set_xlabel("Overall Score Rank", fontsize=10)
-    ax.set_ylabel(f"{metric} Rank", fontsize=10)
-    ax.set_title(f"Rank Concordance: Overall vs {metric}\nρ={corr:.3f}, p={p_val:.3f}", fontsize=11, fontweight="semibold")
+    ax.set_ylabel(f"{metric.replace('_', ' ').title()} Rank", fontsize=10)
+    ax.set_title(f"Overall vs {metric.replace('_', ' ').title()}\nρ = {corr:.3f} (p = {p_val:.3f})",
+                 fontsize=11, fontweight="semibold")
     ax.grid(True, alpha=0.25, linestyle="--")
     ax.set_xlim(min_rank - 0.5, max_rank + 0.5)
     ax.set_ylim(min_rank - 0.5, max_rank + 0.5)
@@ -414,16 +453,9 @@ def plot_per_model_scatter(df: pd.DataFrame, output_root: Path, metrics: list):
 if __name__ == "__main__":
     df_all = load_summary_files(SUMMARY_GLOB)
 
-    # Distribution: box + violin combined
     plot_overall_score_distribution(df_all, OUTPUT_DIR)
-
-    # Rank concordance: individual + combined
     plot_rank_concordance(df_all, OUTPUT_DIR, PREFERRED_METRICS)
-
-    # Delta improvement: individual + combined
     plot_delta_improvement(df_all, OUTPUT_DIR, PREFERRED_METRICS)
-
-    # Per-model scatter plots
     plot_per_model_scatter(df_all, OUTPUT_DIR, PREFERRED_METRICS)
 
-    print("Done.")
+    print("All plots generated successfully!")
