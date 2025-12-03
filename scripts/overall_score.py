@@ -21,15 +21,31 @@ PREFERRED_METRICS = [
     "loc_score",
 ]
 
-# Theme
-sns.set_theme(style="whitegrid", palette="Set3", font_scale=1.3, font="sans-serif", rc={
-    "figure.figsize": (10, 5),
-    "axes.titlesize": 11,
-    "axes.labelsize": 10,
-    "xtick.labelsize": 9,
-    "ytick.labelsize": 9,
-    "legend.fontsize": 9
+#theme
+sns.set_theme(style="whitegrid", rc={
+    "axes.spines.right": False,
+    "axes.spines.top": False,
+    "figure.figsize": (10, 5.5),
+    "axes.titlesize": 13,
+    "axes.labelsize": 11,
+    "xtick.labelsize": 10,
+    "ytick.labelsize": 10,
+    "legend.fontsize": 10,
+    "grid.alpha": 0.25,
 })
+
+# Beautiful red → green divergent palette (12 steps)
+divergent_cmap = sns.diverging_palette(
+    h_neg=355,   # red
+    h_pos=130,   # green
+    s=90, l=55,
+    sep=10,
+    n=12,
+    center="light"
+)
+
+sns.set_palette(divergent_cmap)
+plt.rcParams['axes.prop_cycle'] = plt.cycler(color=divergent_cmap)
 
 
 def load_summary_files(pattern: str) -> pd.DataFrame:
@@ -380,75 +396,189 @@ def _plot_delta_core(ax, model_stats_norm, metric, model_color_map):
 
 def plot_per_model_scatter(df: pd.DataFrame, output_root: Path, metrics: list):
     """
-    For each model, create a vertical stack of scatter plots (overall_score vs each metric).
-    Saves one image per model in output_root/<model>/scatter_overall_vs_metrics.png
+    Memory-efficient version: processes one model at a time and aggressively frees memory.
     """
     if df.empty:
         print("No data available to plot per-model scatter.")
         return
 
     models = sorted(df["model"].unique())
-    print(f"Generating plots for models: {models}")
+    print(f"Generating per-model scatter plots for {len(models)} models...")
 
-    for model in models:
+    for idx, model in enumerate(models, 1):
+        print(f"  [{idx}/{len(models)}] Processing model: {model}", end="")
+
         df_model = df[df["model"] == model].copy()
         if df_model.empty:
+            print(" -> skipped (empty)")
             continue
 
         available_metrics = [m for m in metrics if m in df_model.columns]
         if "overall_score" not in df_model.columns or not available_metrics:
-            print(f"Skipping model '{model}': insufficient columns")
+            print(" -> skipped (missing columns)")
             continue
 
         df_model["overall_score"] = sanitize_series(df_model["overall_score"])
         df_model = df_model.dropna(subset=["overall_score"])
         if df_model.empty:
-            print(f"Skipping model '{model}': no valid overall_score values")
+            print(" -> skipped (no valid scores)")
             continue
 
         n = len(available_metrics)
-        fig, axes = plt.subplots(nrows=n, ncols=1, figsize=(10, 3 * n), squeeze=False)
+        fig, axes = plt.subplots(nrows=n, ncols=1, figsize=(9, 2.7 * n), squeeze=False)
+        fig.suptitle(f"{model} — Overall Score vs Individual Metrics", fontsize=14, y=0.98)
 
+        any_plotted = False
         for i, metric in enumerate(available_metrics):
             ax = axes[i, 0]
             series_metric = sanitize_series(df_model[metric])
-            plot_df = pd.DataFrame({"overall_score": df_model["overall_score"], metric: series_metric}).dropna()
+            plot_df = pd.DataFrame({
+                "overall_score": df_model["overall_score"],
+                metric: series_metric
+            }).dropna()
+
             if plot_df.empty:
                 ax.set_visible(False)
                 continue
 
+            any_plotted = True
             x = plot_df[metric].values
             y = plot_df["overall_score"].values
 
-            # Jitter if discrete
-            if np.issubdtype(plot_df[metric].dtype, np.number) and len(np.unique(np.round(x, 6))) < 15:
-                jitter = (np.random.rand(len(x)) - 0.5) * (np.ptp(x) * 0.02 + 1e-6)
+            # Light jitter only if needed
+            if len(np.unique(np.round(x, 5))) < 20:
+                jitter = np.random.uniform(-0.02, 0.02, size=len(x)) * (x.ptp() or 1)
                 x = x + jitter
 
-            ax.scatter(x, y, alpha=0.75, edgecolors="none")
-            ax.set_xlabel(metric)
-            ax.set_ylabel("overall_score")
-            ax.set_title(f"{model}: overall_score vs {metric}", fontsize=10)
+            ax.scatter(x, y, alpha=0.65, s=30, edgecolor="none", color=sns.color_palette("Set3")[i % 12])
+            ax.set_xlabel(metric.replace("_", " ").title())
+            ax.set_ylabel("Overall Score")
+            ax.grid(True, alpha=0.25)
 
-            # Trend line if enough points
+            # Trend line
             if len(x) >= 3:
                 try:
                     m, b = np.polyfit(x, y, 1)
-                    xs = np.linspace(np.min(x), np.max(x), 100)
-                    ax.plot(xs, m * xs + b, linestyle="--", linewidth=1)
-                except Exception:
+                    ax.plot(np.linspace(x.min(), x.max(), 100), m * np.linspace(x.min(), x.max(), 100) + b,
+                            "--", color="red", linewidth=1.2, alpha=0.8)
+                except:
                     pass
 
-            ax.grid(True, alpha=0.25)
+        if not any_plotted:
+            plt.close(fig)
+            print(" -> no valid data")
+            continue
 
-        plt.tight_layout()
-        model_out_dir = output_root / model
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+
+        model_out_dir = output_root / "per_model_scatters" / model
         model_out_dir.mkdir(parents=True, exist_ok=True)
         out_file = model_out_dir / "scatter_overall_vs_metrics.png"
-        fig.savefig(out_file, dpi=300, bbox_inches="tight")
-        plt.close(fig)
-        print(f"Saved scatter plot for model '{model}' -> {out_file}")
 
+        fig.savefig(out_file, dpi=200, bbox_inches="tight")  # Reduced DPI = huge memory savings
+        plt.close(fig)  # Critical: free memory immediately
+        print(f" -> saved ({len(df_model)} points)")
+
+        # Explicit garbage collection every few models
+        if idx % 5 == 0:
+            import gc
+            gc.collect()
+
+    print("All per-model scatter plots completed safely!")
+
+def plot_metrics_heatmap(df: pd.DataFrame, metrics: list = None, output_dir: Path = OUTPUT_DIR):
+    """
+    Heatmap that inherits the current global divergent palette (red → green).
+    overall_score = always first column.
+    """
+    if df.empty:
+        print("No data to plot heatmap.")
+        return
+
+    if metrics is None:
+        metrics = PREFERRED_METRICS
+
+    # 1. Desired column order – overall_score always first
+    desired_columns = ["overall_score"]
+    for m in metrics:
+        if m != "overall_score" and m in df.columns:
+            desired_columns.append(m)
+
+    available_cols = [c for c in desired_columns if c in df.columns]
+    if not available_cols:
+        print("None of the requested metrics found.")
+        return
+
+    # 2. One row per model (mean if multiple runs)
+    heatmap_data = df.pivot_table(
+        index="model",
+        values=available_cols,
+        aggfunc="mean"
+    )[available_cols]  # enforce order
+
+    # Sort models by overall_score descending
+    if "overall_score" in heatmap_data.columns:
+        heatmap_data = heatmap_data.sort_values(by="overall_score", ascending=False)
+
+    # 3. Normalize 0–1 (invert low-is-better metrics)
+    normalized = heatmap_data.copy()
+    for col in normalized.columns:
+        mn, mx = normalized[col].min(), normalized[col].max()
+        if mx == mn:
+            normalized[col] = 0.5
+            continue
+        if "cyclomatic_complexity" in col.lower() or col == "loc_score":
+            normalized[col] = (mx - normalized[col]) / (mx - mn)   # lower → better
+        else:
+            normalized[col] = (normalized[col] - mn) / (mx - mn)
+
+    # 4. Colormap – reuse the global divergent palette as a continuous cmap
+    try:
+        # `divergent_cmap` is the global 12-color red→green palette defined at the top.
+        cmap = sns.color_palette(divergent_cmap, as_cmap=True)
+    except Exception:
+        # Very safe fallback if something goes wrong
+        cmap = "RdYlGn"
+
+    # 5. Plot
+    plt.figure(figsize=(len(available_cols) * 1.3 + 2, max(4.5, len(heatmap_data) * 0.65)))
+
+    ax = sns.heatmap(
+        normalized,
+        annot=heatmap_data.round(3),
+        fmt="",
+        cmap=cmap,
+        center=0.5,
+        linewidths=1,
+        linecolor="white",
+        cbar_kws={"shrink": 0.8, "label": "Normalized Performance (0 = worst → 1 = best)"},
+        annot_kws={"size": 10.5, "weight": "bold"}
+    )
+
+    # Pretty labels
+    label_mapping = {
+        "overall_score": "Overall Score",
+        "functional_correctness": "Func. Correctness",
+        "efficiency_score": "Efficiency",
+        "avg_cyclomatic_complexity": "Avg Cyclomatic",
+        "max_cyclomatic_complexity": "Max Cyclomatic",
+        "style_score": "Code Style",
+        "loc_score": "LOC Score",
+    }
+    pretty = [label_mapping.get(c, c.replace("_", " ").title()) for c in available_cols]
+    ax.set_xticklabels(pretty, rotation=45, ha="right")
+
+    plt.title("Model Performance Heatmap\n(Green = Best | Red = Worst | Overall Score = Leftmost)",
+              fontsize=15, fontweight="bold", pad=25)
+    plt.ylabel("Model", fontsize=12)
+    plt.xlabel("")
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+
+    out_path = output_dir / "model_metrics_heatmap.png"
+    plt.savefig(out_path, dpi=300, bbox_inches="tight")
+    print(f"Heatmap saved → {out_path}")
+    plt.close()
 
 if __name__ == "__main__":
     df_all = load_summary_files(SUMMARY_GLOB)
@@ -457,5 +587,6 @@ if __name__ == "__main__":
     plot_rank_concordance(df_all, OUTPUT_DIR, PREFERRED_METRICS)
     plot_delta_improvement(df_all, OUTPUT_DIR, PREFERRED_METRICS)
     plot_per_model_scatter(df_all, OUTPUT_DIR, PREFERRED_METRICS)
+    plot_metrics_heatmap(df_all, PREFERRED_METRICS, OUTPUT_DIR)
 
     print("All plots generated successfully!")
