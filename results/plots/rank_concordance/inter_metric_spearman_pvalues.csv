@@ -1,7 +1,7 @@
 ,functional_correctness,efficiency_score,avg_cyclomatic_complexity,max_cyclomatic_complexity,style_score,loc_score
-functional_correctness,0.0,0.7892,0.2621,0.2621,0.0513,0.7892
-efficiency_score,0.7892,0.0,0.2,0.2,0.6,0.8
-avg_cyclomatic_complexity,0.2621,0.2,0.0,0.0,0.2,0.6
-max_cyclomatic_complexity,0.2621,0.2,0.0,0.0,0.2,0.6
-style_score,0.0513,0.6,0.2,0.2,0.0,1.0
-loc_score,0.7892,0.8,0.6,0.6,1.0,0.0
+functional_correctness,0.0,0.9347,0.0539,0.0539,0.0048,0.269
+efficiency_score,0.9347,0.0,0.8729,0.8729,1.0,0.391
+avg_cyclomatic_complexity,0.0539,0.8729,0.0,0.0,0.0374,0.1881
+max_cyclomatic_complexity,0.0539,0.8729,0.0,0.0,0.0374,0.1881
+style_score,0.0048,1.0,0.0374,0.0374,0.0,0.391
+loc_score,0.269,0.391,0.1881,0.1881,0.391,0.0

@@ -89,6 +89,13 @@ def plot_overall_score_distribution(df: pd.DataFrame, output_root: Path):
     
     # Create figure with subplots
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+
+    fig.suptitle(
+        "Distribution of Overall PoE Score Across Code Generation Models",
+        fontsize=15,
+        fontweight="bold",
+        y=1.02
+    )
     
     # Box plot
     box_data = [df_clean[df_clean["model"] == model]["overall_score"].values for model in models]
@@ -100,9 +107,9 @@ def plot_overall_score_distribution(df: pd.DataFrame, output_root: Path):
         patch.set_facecolor(color)
         patch.set_alpha(0.7)
     
-    ax1.set_title("Overall Score Distribution by Model (Box Plot)")
-    ax1.set_xlabel("Model")
-    ax1.set_ylabel("Overall Score")
+    ax1.set_title("Overall PoE Score per Model (HumanEval Tasks)")
+    ax1.set_xlabel("Code Generation Model")
+    ax1.set_ylabel("Overall PoE Score")
     ax1.tick_params(axis='x', rotation=45)
     
     # Violin plot
@@ -122,9 +129,10 @@ def plot_overall_score_distribution(df: pd.DataFrame, output_root: Path):
     
     ax2.set_xticks(positions)
     ax2.set_xticklabels(models, rotation=45)
-    ax2.set_title("Overall Score Distribution by Model (Violin Plot)")
-    ax2.set_xlabel("Model")
-    ax2.set_ylabel("Overall Score")
+    
+    ax2.set_title("Score Density per Model (Violin Plot)")
+    ax2.set_xlabel("Code Generation Model")
+    ax2.set_ylabel("Overall PoE Score")
     
     plt.tight_layout()
     
@@ -229,8 +237,16 @@ def plot_rank_concordance(df: pd.DataFrame, output_root: Path, metrics: list):
                 mask=mask,
                 annot_kws={"size": 10, "weight": "bold"})
 
-    plt.title("Spearman Rank Correlation Between Individual Metrics", 
-              fontsize=14, fontweight="bold", pad=20)
+    plt.title(
+    "Spearman Rank Correlation Between Evaluation Metrics\n"
+    "(Higher |ρ| indicates stronger monotonic relationship)",
+    fontsize=14,
+    fontweight="bold",
+    pad=20
+)
+    
+    plt.xlabel("Metric", fontsize=11)
+    plt.ylabel("Metric", fontsize=11)
     plt.xticks(rotation=45, ha="right")
     plt.yticks(rotation=0)
     plt.tight_layout()
@@ -272,10 +288,27 @@ def _plot_rank_concordance_core(ax, model_stats, overall_ranks, metric_ranks, me
     ax.plot([min_rank, max_rank], [min_rank, max_rank], "r--", alpha=0.35, linewidth=1.5)
 
     corr, p_val = spearmanr(xs, ys)
-    ax.set_xlabel("Overall Score Rank", fontsize=10)
-    ax.set_ylabel(f"{metric.replace('_', ' ').title()} Rank", fontsize=10)
-    ax.set_title(f"Overall vs {metric.replace('_', ' ').title()}\nρ = {corr:.3f} (p = {p_val:.3f})",
-                 fontsize=11, fontweight="semibold")
+
+    metric_label_map = {
+        "functional_correctness": "Functional Correctness",
+        "efficiency_score": "Efficiency Score",
+        "avg_cyclomatic_complexity": "Avg. Cyclomatic Complexity",
+        "max_cyclomatic_complexity": "Max Cyclomatic Complexity",
+        "style_score": "Style Score",
+        "loc_score": "LOC Score"
+    }
+    
+    pretty_metric = metric_label_map.get(metric, metric.replace("_", " ").title())
+
+    ax.set_xlabel("Overall Score Rank (1 = best)", fontsize=10)
+    ax.set_ylabel(f"{pretty_metric} Rank (1 = best)", fontsize=10)
+
+    ax.set_title(
+        f"Rank Concordance: Overall Score vs {pretty_metric}\n"
+        f"Spearman ρ = {corr:.3f} (p = {p_val:.3f})",
+        fontsize=11,
+        fontweight="semibold"
+    )
     ax.grid(True, alpha=0.25, linestyle="--")
     ax.set_xlim(min_rank - 0.5, max_rank + 0.5)
     ax.set_ylim(min_rank - 0.5, max_rank + 0.5)
@@ -371,25 +404,50 @@ def _plot_delta_core(ax, model_stats_norm, metric, model_color_map):
     negative_color = palette[0]  # red pastel
     
     bar_colors = [positive_color if d > 0 else negative_color for d in deltas] 
-    bars = ax.bar(models, deltas, color=bar_colors, alpha=0.85, edgecolor="black", linewidth=0.4)
-
+    bars = ax.bar(models, deltas, color=bar_colors, alpha=0.85,
+                  edgecolor="black", linewidth=0.4)
     # Value labels
     for bar, delta in zip(bars, deltas):
         h = bar.get_height()
         y_offset = 0.01 if h >= 0 else -0.01
         va = "bottom" if h >= 0 else "top"
-        ax.text(bar.get_x() + bar.get_width() / 2, h + y_offset, f"{delta:.3f}",
+        ax.text(bar.get_x() + bar.get_width() / 2, h + y_offset,
+                f"{delta:.3f}",
                 ha="center", va=va, fontsize=8, fontweight="semibold")
 
     ax.axhline(0, color="black", linewidth=0.7)
-    ax.set_title(f"Δ Improvement: Overall vs {metric}", fontsize=11, fontweight="semibold")
-    ax.set_ylabel("Δ (Overall - Metric)")
+
+    metric_label_map = {
+        "functional_correctness": "Functional Correctness",
+        "efficiency_score": "Efficiency Score",
+        "avg_cyclomatic_complexity": "Avg. Cyclomatic Complexity",
+        "max_cyclomatic_complexity": "Max Cyclomatic Complexity",
+        "style_score": "Style Score",
+        "loc_score": "LOC Score"
+    }
+    pretty_metric = metric_label_map.get(metric, metric.replace("_", " ").title())
+
+    ax.set_title(
+        f"Difference Between Normalized Overall Score and {pretty_metric}\n"
+        f"(Δ = Overall − {pretty_metric}; positive = Overall > Metric)",
+        fontsize=11,
+        fontweight="semibold"
+    )
+    ax.set_ylabel("Δ (Normalized Overall − Metric)", fontsize=10)
+
     ax.set_xticklabels(models, rotation=45, ha="right")
-    mean_delta = deltas.mean()
-    positives = (deltas > 0).sum()
-    ax.text(0.02, 0.98, f"Mean Δ: {mean_delta:.3f}\nPositive: {positives}/{len(deltas)}",
-            transform=ax.transAxes, va="top", fontsize=9,
-            bbox=dict(boxstyle="round", facecolor="white", alpha=0.8))
+
+    mean_delta = np.nanmean(deltas)
+    positives = np.sum(deltas > 0)
+
+    ax.text(
+        0.02, 0.98,
+        f"Mean Δ: {mean_delta:.3f}\nPositive bars: {positives}/{len(deltas)}",
+        transform=ax.transAxes,
+        va="top", fontsize=9,
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8)
+    )
+    
     ax.grid(True, alpha=0.25, axis="y")
     ax.set_facecolor("#fbfbfb")
 
@@ -426,11 +484,26 @@ def plot_per_model_scatter(df: pd.DataFrame, output_root: Path, metrics: list):
 
         n = len(available_metrics)
         fig, axes = plt.subplots(nrows=n, ncols=1, figsize=(9, 2.7 * n), squeeze=False)
-        fig.suptitle(f"{model} — Overall Score vs Individual Metrics", fontsize=14, y=0.98)
+        fig.suptitle(
+            f"{model} — Relationship Between Overall Score and Individual Metrics",
+            fontsize=14,
+            y=0.98
+    )
 
         any_plotted = False
         for i, metric in enumerate(available_metrics):
             ax = axes[i, 0]
+
+            metric_label_map = {
+                "functional_correctness": "Functional Correctness",
+                "efficiency_score": "Efficiency Score",
+                "avg_cyclomatic_complexity": "Avg. Cyclomatic Complexity",
+                "max_cyclomatic_complexity": "Max Cyclomatic Complexity",
+                "style_score": "Style Score",
+                "loc_score": "LOC Score"
+            }
+            pretty_metric = metric_label_map.get(metric, metric.replace("_", " ").title())
+
             series_metric = sanitize_series(df_model[metric])
             plot_df = pd.DataFrame({
                 "overall_score": df_model["overall_score"],
@@ -450,19 +523,28 @@ def plot_per_model_scatter(df: pd.DataFrame, output_root: Path, metrics: list):
                 jitter = np.random.uniform(-0.02, 0.02, size=len(x)) * (x.ptp() or 1)
                 x = x + jitter
 
-            ax.scatter(x, y, alpha=0.65, s=30, edgecolor="none", color=sns.color_palette("Set3")[i % 12])
-            ax.set_xlabel(metric.replace("_", " ").title())
-            ax.set_ylabel("Overall Score")
+            ax.scatter(
+                x, y,
+                alpha=0.65,
+                s=30,
+                edgecolor="none",
+                color=sns.color_palette("Set3")[i % 12]
+            )
+
+            ax.set_xlabel(pretty_metric, fontsize=10)
+            ax.set_ylabel("Overall PoE Score", fontsize=10)
+            ax.set_title(f"{pretty_metric} vs Overall PoE Score", fontsize=11)
             ax.grid(True, alpha=0.25)
 
             # Trend line
             if len(x) >= 3:
                 try:
                     m, b = np.polyfit(x, y, 1)
-                    ax.plot(np.linspace(x.min(), x.max(), 100), m * np.linspace(x.min(), x.max(), 100) + b,
-                            "--", color="red", linewidth=1.2, alpha=0.8)
+                    xx = np.linspace(x.min(), x.max(), 100)
+                    ax.plot(xx, m * xx + b, "--", color="red", linewidth=1.2, alpha=0.8)
                 except:
                     pass
+
 
         if not any_plotted:
             plt.close(fig)
@@ -568,10 +650,15 @@ def plot_metrics_heatmap(df: pd.DataFrame, metrics: list = None, output_dir: Pat
     pretty = [label_mapping.get(c, c.replace("_", " ").title()) for c in available_cols]
     ax.set_xticklabels(pretty, rotation=45, ha="right")
 
-    plt.title("Model Performance Heatmap\n(Green = Best | Red = Worst | Overall Score = Leftmost)",
-              fontsize=15, fontweight="bold", pad=25)
-    plt.ylabel("Model", fontsize=12)
-    plt.xlabel("")
+    plt.title(
+        "Normalized Performance of Code Generation Models Across Evaluation Metrics\n"
+        "(Green = Best, Red = Worst; Overall Score on the Left)",
+        fontsize=15,
+        fontweight="bold",
+        pad=25
+    )
+    plt.ylabel("Code Generation Model", fontsize=12)
+    plt.xlabel("Evaluation Metric", fontsize=12)
     plt.yticks(rotation=0)
     plt.tight_layout()
 
