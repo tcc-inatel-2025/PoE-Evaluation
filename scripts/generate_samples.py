@@ -25,6 +25,12 @@ parser.add_argument(
     help="Number of samples per task (default from NUM_SAMPLES env var)."
 )
 parser.add_argument(
+    "--temperature",
+    type=float,
+    default=float(os.getenv("TEMPERATURE", "0")),
+    help="Temperature for generation (default: 0 for reproducibility)."
+)
+parser.add_argument(
     "--output",
     default=None,  # Will be set dynamically based on model name
     help="Output file (default: data/{model_name}_samples.jsonl)."
@@ -35,6 +41,7 @@ args = parser.parse_args()
 OLLAMA_URL = args.url
 MODEL_NAME = args.model
 NUM_SAMPLES_PER_TASK = args.num_samples
+TEMPERATURE = args.temperature
 
 # Create samples directory at project root level
 SAMPLES_DIR = "../samples"
@@ -66,13 +73,19 @@ Task:
 """
 
 
-def generate_from_ollama(model, prompt):
+def generate_from_ollama(model, prompt, temperature=0):
     """
     Stream a response from the Ollama API.
     """
     resp = requests.post(
         f"{OLLAMA_URL}/api/generate",
-        json={"model": model, "prompt": prompt},
+        json={
+            "model": model,
+            "prompt": prompt,
+            "options": {
+                "temperature": temperature
+            }
+        },
         stream=True,
     )
     output = ""
@@ -89,6 +102,7 @@ def generate_from_ollama(model, prompt):
 
 def main():
     print(f"Generating samples using model: {MODEL_NAME}")
+    print(f"Temperature: {TEMPERATURE}")
     print(f"Results will be saved to: {OUTPUT_FILE}")
     
     problems = read_problems()  # dict: {task_id: {"prompt": "...", ...}}
@@ -97,7 +111,7 @@ def main():
             prompt = PROMPT_TEMPLATE.format(problem_prompt=problem["prompt"])
             for _ in range(NUM_SAMPLES_PER_TASK):
                 print(f"[+] Generating for task {task_id} ...")
-                completion_json = generate_from_ollama(MODEL_NAME, prompt)
+                completion_json = generate_from_ollama(MODEL_NAME, prompt, TEMPERATURE)
                 try:
                     obj = extract_first_json(completion_json)
                     code_value = obj.get("code") if isinstance(obj, dict) else None
