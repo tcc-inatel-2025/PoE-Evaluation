@@ -58,16 +58,15 @@ def discover_sample_files(samples_dir="samples"):
 # ==============================
 def scale_cc(value, max_cc=MAX_CC):
     """
-    Scales cyclomatic complexity to 0-1, then inverts it so that
-    higher scores are better (simpler code).
-    
-    - CC = 0       -> 1.0 (best)
-    - CC >= max_cc -> 0.0 (worst)
+    Scales cyclomatic complexity to 0–1.
+
+    - CC = 0       -> 0.0 (best)
+    - CC >= max_cc -> 1.0 (worst)
     """
     if value is None:
         return None
-    raw_scaled = min(value / max_cc, 1.0)
-    return 1.0 - raw_scaled
+    return min(value / max_cc, 1.0)
+
 
 
 def scale_lint(value, max_score=MAX_LINT_SCORE):
