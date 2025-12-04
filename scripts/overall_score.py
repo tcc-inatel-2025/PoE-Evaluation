@@ -92,7 +92,7 @@ def plot_overall_score_distribution(df: pd.DataFrame, output_root: Path):
     
     # Box plot
     box_data = [df_clean[df_clean["model"] == model]["overall_score"].values for model in models]
-    bp = ax1.boxplot(box_data, labels=models, patch_artist=True)
+    bp = ax1.boxplot(box_data, labels=models, patch_artist=True, showfliers=False)
     
     # Color the boxes
     colors = plt.cm.Set3(np.linspace(0, 1, len(models)))
