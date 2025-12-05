@@ -15,13 +15,12 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 PREFERRED_METRICS = [
     "functional_correctness",
     "efficiency_score",
-    "avg_cyclomatic_complexity",
     "max_cyclomatic_complexity",
     "style_score",
     "loc_score",
 ]
 
-#theme
+# theme
 sns.set_theme(style="whitegrid", rc={
     "axes.spines.right": False,
     "axes.spines.top": False,
@@ -636,6 +635,7 @@ def plot_metrics_heatmap(df: pd.DataFrame, metrics: list = None, output_dir: Pat
         if mx == mn:
             normalized[col] = 0.5
             continue
+        # Treat cyclomatic complexity and loc_score as "lower is better"
         if "cyclomatic_complexity" in col.lower() or col == "loc_score":
             normalized[col] = (mx - normalized[col]) / (mx - mn)   # lower → better
         else:
@@ -669,7 +669,6 @@ def plot_metrics_heatmap(df: pd.DataFrame, metrics: list = None, output_dir: Pat
         "overall_score": "Overall Score",
         "functional_correctness": "Func. Correctness",
         "efficiency_score": "Efficiency",
-        "avg_cyclomatic_complexity": "Avg Cyclomatic",
         "max_cyclomatic_complexity": "Max Cyclomatic",
         "style_score": "Code Style",
         "loc_score": "LOC Score",
