@@ -33,6 +33,8 @@ services:
     mem_limit: 256m
     cpus: 1.0
     working_dir: /workspace
+    ports:
+      - "8888:8888"
     volumes:
       - ./:/workspace
       - ./ollama_models:/root/.ollama    # same shared folder as ollama
