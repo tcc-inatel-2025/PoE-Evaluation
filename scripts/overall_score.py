@@ -458,6 +458,9 @@ def _plot_delta_core(ax, model_stats_norm, metric, model_color_map):
     """Core plotting for delta bars for a given metric on axis ax."""
     models = model_stats_norm["model"].tolist()
     deltas = (model_stats_norm["overall_score"] - model_stats_norm[metric]).values
+    # Expand Y-axis
+    pad = 0.05
+    ax.set_ylim(min(deltas) - pad, max(deltas) + pad)
 
     # Colors: use green/red but keep alpha consistent; we still have palette for marker consistency
     # Use Set3 palette colors for consistency (greenish/red tones)
